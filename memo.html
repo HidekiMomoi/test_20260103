@@ -25,7 +25,7 @@
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
 
-    .grid { display:grid; grid-template-columns: 1fr 220px; gap:10px; }
+    .grid { display:grid; grid-template-columns: 1fr 240px; gap:10px; }
     @media (max-width: 820px){ .grid{ grid-template-columns: 1fr; } }
 
     .filterRow { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
@@ -43,6 +43,7 @@
     .pill.tag { border-color:#ffe2b5; background:#fff7ea; color:#9a5b00; cursor:pointer; }
     .pill.tag.active { outline: 2px solid rgba(154,91,0,.25); }
     .btnCol { display:flex; gap:8px; flex-direction:column; }
+
     .footer{ font-size:13px; color:#666; margin-top:10px; }
 
     .panel {
@@ -92,9 +93,10 @@
 
         </div>
 
-        <div class="row" style="justify-content:flex-end; align-items:stretch;">
-          <button id="addBtn" class="primary" style="width:100%; height:100%; min-height:120px;">追加</button>
+        <div class="row" style="justify-content:flex-end; align-items:stretch; flex-direction:column;">
+          <button id="addBtn" class="primary" style="width:100%; height:100%; min-height:90px;">追加</button>
           <button id="cancelEditBtn" class="hidden" style="width:100%;">編集キャンセル</button>
+          <button id="clearInputBtn" class="ghost" style="width:100%;">入力クリア</button>
         </div>
       </div>
 
@@ -105,6 +107,7 @@
         </select>
         <input id="filterTags" type="text" placeholder="タグ絞り込み（カンマ区切り）例：申請,急ぎ" />
         <div class="btns">
+          <button id="clearFilterBtn" class="ghost">絞り込みクリア</button>
           <button id="reloadBtn">再読み込み</button>
           <button id="deleteAllBtn" class="danger">全削除</button>
         </div>
@@ -153,6 +156,7 @@
 
     const addBtn = document.getElementById("addBtn");
     const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const clearInputBtn = document.getElementById("clearInputBtn");
 
     const manageCatBtn = document.getElementById("manageCatBtn");
     const catPanel = document.getElementById("catPanel");
@@ -165,6 +169,7 @@
     const filterCategory = document.getElementById("filterCategory");
     const filterTags = document.getElementById("filterTags");
 
+    const clearFilterBtn = document.getElementById("clearFilterBtn");
     const reloadBtn = document.getElementById("reloadBtn");
     const deleteAllBtn = document.getElementById("deleteAllBtn");
 
@@ -207,7 +212,29 @@
     let categories = [];    // {id, name}
     let editingId = null;   // memoId
 
-    // ---------- UI helpers ----------
+    // ---------- input clear / filter clear ----------
+    function clearInputs() {
+      titleInput.value = "";
+      bodyInput.value = "";
+      categoryInput.value = "";
+      tagsInput.value = "";
+      setEditMode(null);
+      setStatus("入力欄をクリアしました。");
+      titleInput.focus();
+    }
+
+    function clearFilters() {
+      searchInput.value = "";
+      filterCategory.value = "";
+      filterTags.value = "";
+      applyFilterAndRender();
+      setStatus("絞り込みをクリアしました。");
+    }
+
+    clearInputBtn.addEventListener("click", clearInputs);
+    clearFilterBtn.addEventListener("click", clearFilters);
+
+    // ---------- edit mode ----------
     function setEditMode(memoOrNull) {
       if (!memoOrNull) {
         editingId = null;
@@ -227,11 +254,7 @@
     }
 
     cancelEditBtn.addEventListener("click", () => {
-      titleInput.value = "";
-      bodyInput.value = "";
-      categoryInput.value = "";
-      tagsInput.value = "";
-      setEditMode(null);
+      clearInputs();
       setStatus("編集をキャンセルしました。");
     });
 
@@ -260,7 +283,6 @@
           selectEl.appendChild(opt);
         }
 
-        // 値復元（存在しない場合は空に）
         const exists = Array.from(selectEl.options).some(o => o.value === cur);
         selectEl.value = exists ? cur : "";
       };
@@ -288,12 +310,12 @@
           <button data-del="1" class="danger">削除</button>
         `;
         const inp = row.querySelector("input");
+
         row.querySelector("[data-rename]").addEventListener("click", async () => {
           if (!currentUser) return;
           const newName = normalize(inp.value);
           if (!newName) { setStatus("カテゴリ名が空です。", true); return; }
 
-          // 重複チェック（名前ベース）
           const dup = categories.some(x => x.name === newName && x.id !== c.id);
           if (dup) { setStatus("同名カテゴリが既にあります。", true); return; }
 
@@ -464,10 +486,7 @@
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
-          titleInput.value = "";
-          bodyInput.value = "";
-          categoryInput.value = "";
-          tagsInput.value = "";
+          clearInputs();
           setStatus("追加しました！");
         } else {
           await updateDoc(doc(db, "users", currentUser.uid, "memos", editingId), {
@@ -475,7 +494,7 @@
             updatedAt: serverTimestamp()
           });
           setStatus("更新しました！");
-          setEditMode(null);
+          clearInputs();
         }
       } catch (e) {
         console.error(e);
@@ -503,7 +522,7 @@
 
         await batch.commit();
         setStatus(`全削除しました（${count}件）`);
-        setEditMode(null);
+        clearInputs();
       } catch (e) {
         console.error(e);
         setStatus("全削除に失敗しました。", true);
@@ -536,7 +555,8 @@
       listEl.innerHTML = "";
       renderCategorySelects();
       renderCategoryPanel();
-      setEditMode(null);
+      clearFilters();
+      clearInputs();
 
       if (!user) {
         loginBtn.classList.remove("hidden");
