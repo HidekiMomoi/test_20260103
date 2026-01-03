@@ -1,307 +1,342 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>メモ / タスク（編集＆完了下へ）</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>メモ / タスク（Firebase版）</title>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; }
-    .wrap { max-width: 780px; margin: 0 auto; }
-    h1 { margin: 0 0 12px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    input[type="text"] { flex: 1; min-width: 220px; padding: 10px; font-size: 16px; }
-    input[type="date"] { padding: 10px; font-size: 16px; }
-    button { padding: 10px 12px; font-size: 14px; cursor: pointer; }
-    ul { list-style: none; padding: 0; margin: 16px 0 0; }
-    li { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 8px; }
-    li.done { opacity: .85; }
-    li.done .titleEdit { text-decoration: line-through; opacity: .7; }
-    .col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .titleEdit { width: 100%; padding: 8px 10px; font-size: 16px; }
-    .meta { font-size: 12px; color: #666; display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; }
-    .overdue { border-color: #f55; color: #c00; }
-    .today { border-color: #fa0; color: #a60; }
-    .dueEdit { font-size: 14px; padding: 6px 8px; }
-    .smallBtn { padding: 6px 10px; font-size: 12px; }
-    .muted { color: #666; font-size: 12px; margin-top: 10px; }
-    .danger { border: 1px solid #f0b; }
-    .spacer { height: 4px; }
-    .right { display:flex; gap:8px; align-items:center; }
+    :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
+    body { margin: 0; background:#f7f7fb; color:#111; }
+    .wrap { max-width: 820px; margin: 20px auto; padding: 0 14px 40px; }
+    h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 34px; }
+    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    input[type="text"]{ flex: 1 1 260px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
+    input[type="date"]{ padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
+    button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
+    button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
+    button.danger{ border-color:#ff4d6d; color:#ff4d6d; }
+    .tools { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
+    ul{ list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:10px; }
+    li{ background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; display:flex; align-items:center; gap:10px; }
+    .taskMain{ flex:1; display:flex; flex-direction:column; gap:4px; }
+    .titleLine{ display:flex; align-items:center; gap:10px; }
+    .titleText{ font-size:18px; }
+    .done .titleText{ text-decoration: line-through; color:#777; }
+    .meta{ font-size:13px; color:#666; display:flex; gap:10px; flex-wrap:wrap; }
+    .badge{ font-size:12px; padding:2px 8px; border-radius:999px; background:#f0f1ff; border:1px solid #dde0ff; color:#3a42c6; }
+    .badge.overdue{ background:#fff1f1; border-color:#ffd0d0; color:#c73737; }
+    .badge.today{ background:#f1fff4; border-color:#c9f5d3; color:#1d7a35; }
+    .footer{ font-size:13px; color:#666; margin-top:10px; }
+    .small{ font-size:12px; color:#777; }
+    .warn{ color:#b34b00; }
+    .hidden{ display:none; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <h1>📝 メモ / タスク</h1>
+    <h1><span>📝</span> メモ / タスク（Firebase）</h1>
 
-    <div class="row">
-      <input id="input" type="text" placeholder="例：Firebase勉強 15分 / 買い物 / メール返す" />
-      <input id="due" type="date" />
-      <button id="addBtn">追加</button>
-    </div>
+    <div class="card">
+      <div class="row">
+        <input id="taskInput" type="text" placeholder="例：Firebase勉強 15分 / 買い物 / メール返す" />
+        <input id="dueInput" type="date" />
+        <button id="addBtn" class="primary">追加</button>
+      </div>
 
-    <div class="spacer"></div>
+      <div class="tools">
+        <button id="deleteDoneBtn">完了を削除</button>
+        <button id="deleteAllBtn" class="danger">全部削除</button>
+        <button id="reloadBtn">再読み込み</button>
+        <span id="status" class="small"></span>
+      </div>
 
-    <div class="row">
-      <button id="sortBtn">期限で並び替え</button>
-      <button id="clearDoneBtn">完了を削除</button>
-      <button id="clearAllBtn" class="danger">全部削除</button>
-    </div>
+      <ul id="list"></ul>
 
-    <ul id="list"></ul>
-
-    <div class="muted">
-      ※データはこの端末のブラウザ内（localStorage）に保存されます（無料・サーバー不要）
+      <div class="footer">
+        ※ データは <b>Firebase Firestore</b> に保存されます（無料枠あり）。<br/>
+        ※ 期限はカレンダーから選択できます。
+      </div>
     </div>
   </div>
 
-  <script>
-    var KEY = "memo_tasks_v4";
+  <script type="module">
+    // ==============================
+    // 1) Firebase SDK（CDN）
+    // ==============================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, deleteDoc, doc, updateDoc,
+      onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    var tasks = load();
-    var sortByDue = false;
+    // ==============================
+    // 2) ここをあなたの firebaseConfig に置き換える
+    // （Firebaseコンソールの「ウェブアプリの追加」で出たやつ）
+    // ==============================
+    const firebaseConfig = {
+  apiKey: "AIzaSyBa1uHGYTRft3O0nGiCSTdOCnjnuWHD-R8",
+  authDomain: "task-app-72b7d.firebaseapp.com",
+  projectId: "task-app-72b7d",
+  storageBucket: "task-app-72b7d.firebasestorage.app",
+  messagingSenderId: "677238706690",
+  appId: "1:677238706690:web:f8fe3af7bd3efcb9900d1b"
+};
 
-    var input = document.getElementById("input");
-    var due = document.getElementById("due");
-    var list = document.getElementById("list");
-    var addBtn = document.getElementById("addBtn");
-    var sortBtn = document.getElementById("sortBtn");
-    var clearDoneBtn = document.getElementById("clearDoneBtn");
-    var clearAllBtn = document.getElementById("clearAllBtn");
+    // ==============================
+    // 3) 初期化
+    // ==============================
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // 追加時の期限：空欄（好みで todayStr() でもOK）
-    due.value = "";
+    // コレクション名（好きに変えてOK）
+    const TASKS = "tasks";
 
-    addBtn.addEventListener("click", addTask);
-    input.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") addTask();
-    });
+    // ==============================
+    // 4) DOM
+    // ==============================
+    const taskInput = document.getElementById("taskInput");
+    const dueInput  = document.getElementById("dueInput");
+    const addBtn    = document.getElementById("addBtn");
+    const deleteDoneBtn = document.getElementById("deleteDoneBtn");
+    const deleteAllBtn  = document.getElementById("deleteAllBtn");
+    const reloadBtn     = document.getElementById("reloadBtn");
+    const listEl   = document.getElementById("list");
+    const statusEl = document.getElementById("status");
 
-    sortBtn.addEventListener("click", function() {
-      sortByDue = !sortByDue;
-      sortBtn.textContent = sortByDue ? "追加順に戻す" : "期限で並び替え";
-      render();
-    });
+    // 今日を date input の初期値に（好みで消してOK）
+    const todayStr = toDateStr(new Date());
+    dueInput.value = todayStr;
 
-    clearDoneBtn.addEventListener("click", function() {
-      tasks = tasks.filter(function(t) { return !t.done; });
-      save(tasks);
-      render();
-    });
-
-    clearAllBtn.addEventListener("click", function() {
-      if (!confirm("全部消します。ほんとにOK？")) return;
-      tasks = [];
-      save(tasks);
-      render();
-    });
-
-    function addTask() {
-      var text = (input.value || "").trim();
-      if (!text) return;
-
-      var dueStr = (due.value || "").trim();
-
-      tasks.unshift({
-        id: String(Date.now()) + "_" + Math.random().toString(16).slice(2),
-        text: text,
-        done: false,
-        due: dueStr,
-        createdAt: Date.now(),
-        doneAt: null
-      });
-
-      input.value = "";
-      save(tasks);
-      render();
+    // ==============================
+    // 5) 便利関数
+    // ==============================
+    function toDateStr(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
     }
 
-    // ✅ 2: 完了にしたら下へ（doneAtを使って順序を安定させる）
-    function toggleDone(id) {
-      var now = Date.now();
-      tasks = tasks.map(function(t) {
-        if (t.id === id) {
-          t.done = !t.done;
-          t.doneAt = t.done ? now : null;
-        }
-        return t;
-      });
-      save(tasks);
-      render();
+    function badgeForDue(due) {
+      if (!due) return "";
+      const now = new Date();
+      const today = toDateStr(now);
+      if (due < today) return `<span class="badge overdue">期限切れ</span>`;
+      if (due === today) return `<span class="badge today">今日</span>`;
+      return `<span class="badge">期限：${due}</span>`;
     }
 
-    // ✅ 3: タスク名を編集（即保存）
-    function setText(id, newText) {
-      tasks = tasks.map(function(t) {
-        if (t.id === id) t.text = (newText || "").trim();
-        return t;
-      });
-      save(tasks);
-      // renderはしない（編集中にカーソルが飛ぶのを避ける）
+    function escapeHtml(s) {
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    // 期限を更新（即保存）
-    function setDue(id, dueStr) {
-      tasks = tasks.map(function(t) {
-        if (t.id === id) t.due = (dueStr || "").trim();
-        return t;
-      });
-      save(tasks);
-      render();
+    function setStatus(text, isWarn=false) {
+      statusEl.textContent = text;
+      statusEl.className = "small" + (isWarn ? " warn" : "");
     }
 
-    function removeTask(id) {
-      tasks = tasks.filter(function(t) { return t.id !== id; });
-      save(tasks);
-      render();
-    }
+    // ==============================
+    // 6) Firestore: 追加
+    // ==============================
+    async function addTask() {
+      const title = taskInput.value.trim();
+      const dueDate = dueInput.value || "";
 
-    function render() {
-      list.innerHTML = "";
-
-      if (tasks.length === 0) {
-        var empty = document.createElement("li");
-        empty.innerHTML = '<div class="col">まだメモがありません。上の欄から追加してみて！</div>';
-        list.appendChild(empty);
+      if (!title) {
+        setStatus("タスク名が空です。", true);
+        taskInput.focus();
         return;
       }
 
-      // 基本の並び：未完了 → 完了（完了は doneAt 新しい順で下に寄せつつ整列）
-      var view = tasks.slice();
-      view.sort(function(a, b) {
-        if (a.done !== b.done) return a.done ? 1 : -1; // 完了は下
-        if (a.done && b.done) {
-          // 完了内：新しく完了したものを上に（好みで逆にもできる）
-          return (b.doneAt || 0) - (a.doneAt || 0);
-        }
-        // 未完了内：追加順（新しいのが上）
-        return b.createdAt - a.createdAt;
-      });
+      addBtn.disabled = true;
+      setStatus("追加中…");
 
-      // 期限で並び替えONなら：未完了の中だけ期限ソート（完了は常に下）
-      if (sortByDue) {
-        var undone = view.filter(function(t){ return !t.done; });
-        var done = view.filter(function(t){ return t.done; });
-
-        undone.sort(function(a, b) {
-          var ad = a.due || "9999-12-31";
-          var bd = b.due || "9999-12-31";
-          if (ad < bd) return -1;
-          if (ad > bd) return 1;
-          return b.createdAt - a.createdAt;
-        });
-
-        view = undone.concat(done);
-      }
-
-      view.forEach(function(t) {
-        var li = document.createElement("li");
-        if (t.done) li.classList.add("done");
-
-        var chk = document.createElement("input");
-        chk.type = "checkbox";
-        chk.checked = !!t.done;
-        chk.addEventListener("change", function() { toggleDone(t.id); });
-
-        var col = document.createElement("div");
-        col.className = "col";
-
-        // タスク名編集欄
-        var titleEdit = document.createElement("input");
-        titleEdit.type = "text";
-        titleEdit.className = "titleEdit";
-        titleEdit.value = t.text || "";
-        titleEdit.placeholder = "タスク名を入力…";
-
-        // 入力中に保存（即反映）
-        titleEdit.addEventListener("input", function() {
-          setText(t.id, titleEdit.value);
-        });
-        // フォーカス外れたら再描画して表示更新（trim反映など）
-        titleEdit.addEventListener("blur", function() {
-          // 空なら自動削除したいならここで削除も可。今は残す。
-          save(tasks);
-          render();
-        });
-
-        // メタ情報（期限表示＋編集）
-        var meta = document.createElement("div");
-        meta.className = "meta";
-
-        var pill = document.createElement("span");
-        pill.className = "pill";
-        if (t.due) {
-          pill.textContent = "期限: " + t.due;
-          var cls = dueClass(t.due);
-          if (cls) pill.classList.add(cls);
-        } else {
-          pill.textContent = "期限なし";
-        }
-
-        var dueEdit = document.createElement("input");
-        dueEdit.type = "date";
-        dueEdit.className = "dueEdit";
-        dueEdit.value = t.due || "";
-        dueEdit.addEventListener("change", function() {
-          setDue(t.id, dueEdit.value);
-        });
-
-        var clearDueBtn = document.createElement("button");
-        clearDueBtn.className = "smallBtn";
-        clearDueBtn.textContent = "期限クリア";
-        clearDueBtn.addEventListener("click", function() {
-          setDue(t.id, "");
-        });
-
-        meta.appendChild(pill);
-        meta.appendChild(dueEdit);
-        meta.appendChild(clearDueBtn);
-
-        col.appendChild(titleEdit);
-        col.appendChild(meta);
-
-        var del = document.createElement("button");
-        del.textContent = "削除";
-        del.addEventListener("click", function() { removeTask(t.id); });
-
-        li.appendChild(chk);
-        li.appendChild(col);
-        li.appendChild(del);
-        list.appendChild(li);
-      });
-    }
-
-    function dueClass(dueStr) {
-      var today = todayStr();
-      if (dueStr < today) return "overdue";
-      if (dueStr === today) return "today";
-      return "";
-    }
-
-    function todayStr() {
-      var d = new Date();
-      var y = d.getFullYear();
-      var m = String(d.getMonth() + 1).padStart(2, "0");
-      var day = String(d.getDate()).padStart(2, "0");
-      return y + "-" + m + "-" + day;
-    }
-
-    function load() {
       try {
-        var raw = localStorage.getItem(KEY);
-        if (!raw) return [];
-        var arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
+        await addDoc(collection(db, TASKS), {
+          title,
+          dueDate,          // "YYYY-MM-DD"
+          completed: false,
+          createdAt: serverTimestamp()
+        });
+
+        taskInput.value = "";
+        taskInput.focus();
+        setStatus("追加しました！");
       } catch (e) {
-        return [];
+        console.error(e);
+        setStatus("追加に失敗しました（権限/ルール確認）。", true);
+      } finally {
+        addBtn.disabled = false;
       }
     }
 
-    function save(arr) {
-      localStorage.setItem(KEY, JSON.stringify(arr));
+    addBtn.addEventListener("click", addTask);
+    taskInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addTask();
+    });
+
+    // ==============================
+    // 7) Firestore: 更新（完了切替）
+    // ==============================
+    async function toggleDone(id, current) {
+      try {
+        await updateDoc(doc(db, TASKS, id), { completed: !current });
+      } catch (e) {
+        console.error(e);
+        setStatus("更新に失敗しました。", true);
+      }
     }
 
-    render();
+    // ==============================
+    // 8) Firestore: 削除（1件）
+    // ==============================
+    async function deleteOne(id) {
+      try {
+        await deleteDoc(doc(db, TASKS, id));
+      } catch (e) {
+        console.error(e);
+        setStatus("削除に失敗しました。", true);
+      }
+    }
+
+    // ==============================
+    // 9) Firestore: 完了を削除
+    // ==============================
+    async function deleteDone() {
+      setStatus("完了タスクを削除中…");
+      try {
+        const q = query(collection(db, TASKS));
+        const snap = await getDocs(q);
+
+        const batch = writeBatch(db);
+        let count = 0;
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.completed === true) {
+            batch.delete(doc(db, TASKS, d.id));
+            count++;
+          }
+        });
+
+        if (count === 0) {
+          setStatus("完了タスクはありません。");
+          return;
+        }
+
+        await batch.commit();
+        setStatus(`完了タスクを ${count} 件削除しました。`);
+      } catch (e) {
+        console.error(e);
+        setStatus("完了削除に失敗しました。", true);
+      }
+    }
+
+    deleteDoneBtn.addEventListener("click", deleteDone);
+
+    // ==============================
+    // 10) Firestore: 全部削除
+    // ==============================
+    async function deleteAll() {
+      if (!confirm("全部削除します。よろしいですか？")) return;
+
+      setStatus("全削除中…");
+      try {
+        const q = query(collection(db, TASKS));
+        const snap = await getDocs(q);
+
+        const batch = writeBatch(db);
+        let count = 0;
+        snap.forEach(d => {
+          batch.delete(doc(db, TASKS, d.id));
+          count++;
+        });
+
+        if (count === 0) {
+          setStatus("削除するデータがありません。");
+          return;
+        }
+
+        await batch.commit();
+        setStatus(`全タスクを ${count} 件削除しました。`);
+      } catch (e) {
+        console.error(e);
+        setStatus("全削除に失敗しました。", true);
+      }
+    }
+
+    deleteAllBtn.addEventListener("click", deleteAll);
+    reloadBtn.addEventListener("click", () => location.reload());
+
+    // ==============================
+    // 11) Firestore: リアルタイム表示
+    // ==============================
+    // 並び順：期限 → 作成日時
+    const q = query(
+      collection(db, TASKS),
+      orderBy("dueDate"),
+      orderBy("createdAt")
+    );
+
+    setStatus("同期中…");
+
+    onSnapshot(q, (snapshot) => {
+      listEl.innerHTML = "";
+      if (snapshot.empty) {
+        setStatus("タスクはまだありません。");
+        return;
+      }
+
+      let total = 0;
+      let done  = 0;
+
+      snapshot.forEach((d) => {
+        total++;
+        const data = d.data();
+        const id = d.id;
+        const title = escapeHtml(data.title ?? "");
+        const due = data.dueDate ?? "";
+        const completed = data.completed === true;
+        if (completed) done++;
+
+        const li = document.createElement("li");
+        if (completed) li.classList.add("done");
+
+        li.innerHTML = `
+          <input type="checkbox" ${completed ? "checked" : ""} aria-label="完了" />
+          <div class="taskMain">
+            <div class="titleLine">
+              <div class="titleText">${title}</div>
+            </div>
+            <div class="meta">
+              ${badgeForDue(due)}
+              <span class="small">${completed ? "✅ 完了" : "⬜ 未完了"}</span>
+            </div>
+          </div>
+          <button>削除</button>
+        `;
+
+        const checkbox = li.querySelector("input[type=checkbox]");
+        const delBtn = li.querySelector("button");
+
+        checkbox.addEventListener("change", () => toggleDone(id, completed));
+        delBtn.addEventListener("click", () => deleteOne(id));
+
+        listEl.appendChild(li);
+      });
+
+      setStatus(`表示中：${total}件（完了 ${done} / 未完了 ${total - done}）`);
+    }, (err) => {
+      console.error(err);
+      setStatus("読み込みに失敗（Firestoreルール/設定を確認）。", true);
+    });
   </script>
 </body>
 </html>
