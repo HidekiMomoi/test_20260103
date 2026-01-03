@@ -1,2 +1,2 @@
 ## 公開ページ
-https://hidikimomoi.github.io/test_20260103/
+https://hidekimomoi.github.io/test_20260103/
