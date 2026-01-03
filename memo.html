@@ -7,28 +7,26 @@
   <style>
     :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
     body { margin: 0; background:#f7f7fb; color:#111; }
-    .wrap { max-width: 980px; margin: 20px auto; padding: 0 14px 40px; }
+    .wrap { max-width: 1020px; margin: 20px auto; padding: 0 14px 40px; }
     h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
     h1 span { font-size: 34px; }
     .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     input[type="text"], textarea, select {
-      flex: 1 1 280px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px;
-      background:#fff;
+      flex: 1 1 280px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; background:#fff;
     }
     textarea { min-height: 120px; resize: vertical; }
     button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
     button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
     button.danger{ border-color:#ff4d6d; color:#ff4d6d; }
+    button.ghost{ background:#f7f7fb; }
     .tools { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .small{ font-size:12px; color:#777; }
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
 
     .grid { display:grid; grid-template-columns: 1fr 220px; gap:10px; }
-    @media (max-width: 820px){
-      .grid{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 820px){ .grid{ grid-template-columns: 1fr; } }
 
     .filterRow { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .filterRow > * { flex: 1 1 220px; }
@@ -36,15 +34,25 @@
 
     .list { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
     .item { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; display:flex; gap:12px; align-items:flex-start; }
-    .itemMain { flex: 1; }
+    .itemMain { flex: 1; min-width: 0; }
     .itemTitle { font-size:18px; font-weight:700; margin-bottom:6px; }
     .itemBody { white-space:pre-wrap; color:#222; line-height:1.5; }
     .meta { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .pill { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #dde0ff; background:#f0f1ff; color:#3a42c6; }
+    .pill { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #dde0ff; background:#f0f1ff; color:#3a42c6; user-select:none; }
     .pill.cat { border-color:#d8f1df; background:#f1fff4; color:#1d7a35; }
-    .pill.tag { border-color:#ffe2b5; background:#fff7ea; color:#9a5b00; }
-
+    .pill.tag { border-color:#ffe2b5; background:#fff7ea; color:#9a5b00; cursor:pointer; }
+    .pill.tag.active { outline: 2px solid rgba(154,91,0,.25); }
+    .btnCol { display:flex; gap:8px; flex-direction:column; }
     .footer{ font-size:13px; color:#666; margin-top:10px; }
+
+    .panel {
+      margin-top:10px; border:1px solid #e6e6ef; border-radius:14px; padding:12px; background:#fbfbff;
+    }
+    .panelTitle { font-weight:700; margin-bottom:8px; }
+    .catRow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+    .catList { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+    .catItem { display:flex; gap:8px; align-items:center; }
+    .catItem input { flex: 1; }
   </style>
 </head>
 
@@ -66,28 +74,34 @@
           <div class="row" style="margin-top:10px;">
             <select id="categoryInput">
               <option value="">カテゴリ（未設定）</option>
-              <option value="経費">経費</option>
-              <option value="PANET">PANET</option>
-              <option value="連絡">連絡</option>
-              <option value="私用">私用</option>
             </select>
+            <button id="manageCatBtn" class="ghost">カテゴリ管理</button>
             <input id="tagsInput" type="text" placeholder="タグ（カンマ区切り）例：領収書,申請,急ぎ" />
           </div>
+
+          <div id="catPanel" class="panel hidden">
+            <div class="panelTitle">カテゴリ管理（自分のデータのみ）</div>
+            <div class="catRow">
+              <input id="newCatInput" type="text" placeholder="新しいカテゴリ名（例：経費 / PANET / 連絡）" />
+              <button id="addCatBtn" class="primary">追加</button>
+              <button id="closeCatBtn">閉じる</button>
+            </div>
+            <div class="small">※ 既存カテゴリは「名前変更」「削除」ができます（削除してもメモは消えません）。</div>
+            <div id="catList" class="catList"></div>
+          </div>
+
         </div>
 
         <div class="row" style="justify-content:flex-end; align-items:stretch;">
           <button id="addBtn" class="primary" style="width:100%; height:100%; min-height:120px;">追加</button>
+          <button id="cancelEditBtn" class="hidden" style="width:100%;">編集キャンセル</button>
         </div>
       </div>
 
       <div class="filterRow">
-        <input id="searchInput" type="text" placeholder="検索（タイトル・本文・タグ）" />
+        <input id="searchInput" type="text" placeholder="検索（タイトル・本文・タグ・カテゴリ）" />
         <select id="filterCategory">
           <option value="">カテゴリ絞り込み（すべて）</option>
-          <option value="経費">経費</option>
-          <option value="PANET">PANET</option>
-          <option value="連絡">連絡</option>
-          <option value="私用">私用</option>
         </select>
         <input id="filterTags" type="text" placeholder="タグ絞り込み（カンマ区切り）例：申請,急ぎ" />
         <div class="btns">
@@ -107,7 +121,7 @@
 
       <div class="footer">
         ※ データは Firebase Firestore に保存されます（自分のデータのみ）。<br/>
-        ※ 検索は画面上の絞り込み（高速）です（Firestoreクエリに依存しません）。
+        ※ 検索は画面上の絞り込み（高速）です。タグはクリックでも絞り込みできます。
       </div>
     </div>
   </div>
@@ -121,29 +135,38 @@
       onAuthStateChanged, signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
-      getFirestore, collection, addDoc, deleteDoc, doc,
+      getFirestore, collection, addDoc, deleteDoc, doc, updateDoc,
       onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ---- init
+    // init
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // ---- DOM
+    // DOM
     const titleInput = document.getElementById("titleInput");
     const bodyInput = document.getElementById("bodyInput");
     const categoryInput = document.getElementById("categoryInput");
     const tagsInput = document.getElementById("tagsInput");
 
     const addBtn = document.getElementById("addBtn");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const deleteAllBtn = document.getElementById("deleteAllBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+    const manageCatBtn = document.getElementById("manageCatBtn");
+    const catPanel = document.getElementById("catPanel");
+    const newCatInput = document.getElementById("newCatInput");
+    const addCatBtn = document.getElementById("addCatBtn");
+    const closeCatBtn = document.getElementById("closeCatBtn");
+    const catListEl = document.getElementById("catList");
 
     const searchInput = document.getElementById("searchInput");
     const filterCategory = document.getElementById("filterCategory");
     const filterTags = document.getElementById("filterTags");
+
+    const reloadBtn = document.getElementById("reloadBtn");
+    const deleteAllBtn = document.getElementById("deleteAllBtn");
 
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
@@ -171,16 +194,155 @@
         .filter(Boolean)
         .slice(0, 30);
     }
-    function memosCol(uid) {
-      return collection(db, "users", uid, "memos");
+
+    function memosCol(uid) { return collection(db, "users", uid, "memos"); }
+    function catsCol(uid)  { return collection(db, "users", uid, "categories"); }
+
+    // state
+    let currentUser = null;
+    let unsubscribeMemos = null;
+    let unsubscribeCats = null;
+
+    let allMemos = [];      // {id, title, body, category, tags}
+    let categories = [];    // {id, name}
+    let editingId = null;   // memoId
+
+    // ---------- UI helpers ----------
+    function setEditMode(memoOrNull) {
+      if (!memoOrNull) {
+        editingId = null;
+        addBtn.textContent = "追加";
+        cancelEditBtn.classList.add("hidden");
+        return;
+      }
+      editingId = memoOrNull.id;
+      titleInput.value = memoOrNull.title ?? "";
+      bodyInput.value = memoOrNull.body ?? "";
+      categoryInput.value = memoOrNull.category ?? "";
+      tagsInput.value = (memoOrNull.tags ?? []).join(",");
+      addBtn.textContent = "更新";
+      cancelEditBtn.classList.remove("hidden");
+      titleInput.focus();
+      setStatus("編集中：更新ボタンで保存できます。");
     }
 
-    // ---- state
-    let currentUser = null;
-    let unsubscribe = null;
-    let allMemos = []; // {id, title, body, category, tags, createdAt}
+    cancelEditBtn.addEventListener("click", () => {
+      titleInput.value = "";
+      bodyInput.value = "";
+      categoryInput.value = "";
+      tagsInput.value = "";
+      setEditMode(null);
+      setStatus("編集をキャンセルしました。");
+    });
 
-    // ---- render + client-side filter
+    // ---------- category render ----------
+    function renderCategorySelects() {
+      const build = (selectEl, includeAllOption=false) => {
+        const cur = selectEl.value;
+        selectEl.innerHTML = "";
+
+        if (includeAllOption) {
+          const optAll = document.createElement("option");
+          optAll.value = "";
+          optAll.textContent = "カテゴリ絞り込み（すべて）";
+          selectEl.appendChild(optAll);
+        } else {
+          const optNone = document.createElement("option");
+          optNone.value = "";
+          optNone.textContent = "カテゴリ（未設定）";
+          selectEl.appendChild(optNone);
+        }
+
+        for (const c of categories) {
+          const opt = document.createElement("option");
+          opt.value = c.name;
+          opt.textContent = c.name;
+          selectEl.appendChild(opt);
+        }
+
+        // 値復元（存在しない場合は空に）
+        const exists = Array.from(selectEl.options).some(o => o.value === cur);
+        selectEl.value = exists ? cur : "";
+      };
+
+      build(categoryInput, false);
+      build(filterCategory, true);
+    }
+
+    function renderCategoryPanel() {
+      catListEl.innerHTML = "";
+      if (categories.length === 0) {
+        const div = document.createElement("div");
+        div.className = "small";
+        div.textContent = "カテゴリはまだありません。追加してください。";
+        catListEl.appendChild(div);
+        return;
+      }
+
+      for (const c of categories) {
+        const row = document.createElement("div");
+        row.className = "catItem";
+        row.innerHTML = `
+          <input type="text" value="${escapeHtml(c.name)}" />
+          <button data-rename="1">変更</button>
+          <button data-del="1" class="danger">削除</button>
+        `;
+        const inp = row.querySelector("input");
+        row.querySelector("[data-rename]").addEventListener("click", async () => {
+          if (!currentUser) return;
+          const newName = normalize(inp.value);
+          if (!newName) { setStatus("カテゴリ名が空です。", true); return; }
+
+          // 重複チェック（名前ベース）
+          const dup = categories.some(x => x.name === newName && x.id !== c.id);
+          if (dup) { setStatus("同名カテゴリが既にあります。", true); return; }
+
+          try {
+            await updateDoc(doc(db, "users", currentUser.uid, "categories", c.id), { name: newName });
+            setStatus("カテゴリ名を変更しました。");
+          } catch (e) {
+            console.error(e);
+            setStatus("カテゴリ変更に失敗しました。", true);
+          }
+        });
+
+        row.querySelector("[data-del]").addEventListener("click", async () => {
+          if (!currentUser) return;
+          if (!confirm(`カテゴリ「${c.name}」を削除します。よろしいですか？`)) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "categories", c.id));
+            setStatus("カテゴリを削除しました。");
+          } catch (e) {
+            console.error(e);
+            setStatus("カテゴリ削除に失敗しました。", true);
+          }
+        });
+
+        catListEl.appendChild(row);
+      }
+    }
+
+    manageCatBtn.addEventListener("click", () => catPanel.classList.toggle("hidden"));
+    closeCatBtn.addEventListener("click", () => catPanel.classList.add("hidden"));
+
+    addCatBtn.addEventListener("click", async () => {
+      if (!currentUser) { setStatus("未ログインです。", true); return; }
+      const name = normalize(newCatInput.value);
+      if (!name) { setStatus("カテゴリ名が空です。", true); return; }
+      const dup = categories.some(c => c.name === name);
+      if (dup) { setStatus("同名カテゴリが既にあります。", true); return; }
+
+      try {
+        await addDoc(catsCol(currentUser.uid), { name, createdAt: serverTimestamp() });
+        newCatInput.value = "";
+        setStatus("カテゴリを追加しました。");
+      } catch (e) {
+        console.error(e);
+        setStatus("カテゴリ追加に失敗しました。", true);
+      }
+    });
+
+    // ---------- memo filter + render ----------
     function applyFilterAndRender() {
       const q = normalize(searchInput.value).toLowerCase();
       const cat = normalize(filterCategory.value);
@@ -191,10 +353,7 @@
 
         if (needTags.length > 0) {
           const mtags = (m.tags ?? []).map(t => (t ?? "").toLowerCase());
-          // 入力したタグを全部含む（AND）
-          for (const t of needTags) {
-            if (!mtags.includes(t)) return false;
-          }
+          for (const t of needTags) if (!mtags.includes(t)) return false;
         }
 
         if (!q) return true;
@@ -216,25 +375,52 @@
       for (const m of filtered) {
         const el = document.createElement("div");
         el.className = "item";
+
         const catPill = m.category ? `<span class="pill cat">カテゴリ：${escapeHtml(m.category)}</span>` : "";
-        const tagPills = (m.tags ?? []).map(t => `<span class="pill tag">#${escapeHtml(t)}</span>`).join("");
+        const tagPills = (m.tags ?? []).map(t => {
+          const low = (t ?? "").toLowerCase();
+          const active = needTags.includes(low);
+          return `<span class="pill tag ${active ? "active" : ""}" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`;
+        }).join("");
 
         el.innerHTML = `
           <div class="itemMain">
             <div class="itemTitle">${escapeHtml(m.title || "(無題)")}</div>
             <div class="itemBody">${escapeHtml(m.body || "")}</div>
-            <div class="meta">
-              ${catPill}
-              ${tagPills}
-            </div>
+            <div class="meta">${catPill}${tagPills}</div>
           </div>
-          <button data-del="1">削除</button>
+          <div class="btnCol">
+            <button data-edit="1">編集</button>
+            <button data-del="1" class="danger">削除</button>
+          </div>
         `;
+
+        // タグクリック → filterTags にトグル
+        el.querySelectorAll("[data-tag]").forEach(tagEl => {
+          tagEl.addEventListener("click", () => {
+            const tag = normalize(tagEl.getAttribute("data-tag"));
+            if (!tag) return;
+
+            const current = parseTags(filterTags.value);
+            const exists = current.some(x => x.toLowerCase() === tag.toLowerCase());
+
+            const next = exists
+              ? current.filter(x => x.toLowerCase() !== tag.toLowerCase())
+              : [...current, tag];
+
+            filterTags.value = next.join(",");
+            applyFilterAndRender();
+          });
+        });
+
+        el.querySelector("[data-edit]").addEventListener("click", () => setEditMode(m));
 
         el.querySelector("[data-del]").addEventListener("click", async () => {
           if (!currentUser) return;
+          if (!confirm("このメモを削除します。よろしいですか？")) return;
           try {
             await deleteDoc(doc(db, "users", currentUser.uid, "memos", m.id));
+            if (editingId === m.id) setEditMode(null);
           } catch (e) {
             console.error(e);
             setStatus("削除に失敗しました。", true);
@@ -251,8 +437,8 @@
     filterCategory.addEventListener("change", applyFilterAndRender);
     filterTags.addEventListener("input", applyFilterAndRender);
 
-    // ---- add
-    async function addMemo() {
+    // ---------- add / update ----------
+    async function upsertMemo() {
       if (!currentUser) {
         setStatus("未ログインです。Googleでログインしてください。", true);
         return;
@@ -269,33 +455,39 @@
       }
 
       addBtn.disabled = true;
-      setStatus("追加中…");
+      setStatus(editingId ? "更新中…" : "追加中…");
 
       try {
-        await addDoc(memosCol(currentUser.uid), {
-          title,
-          body,
-          category,
-          tags,
-          createdAt: serverTimestamp()
-        });
-
-        titleInput.value = "";
-        bodyInput.value = "";
-        tagsInput.value = "";
-        categoryInput.value = "";
-        titleInput.focus();
-        setStatus("追加しました！");
+        if (!editingId) {
+          await addDoc(memosCol(currentUser.uid), {
+            title, body, category, tags,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          titleInput.value = "";
+          bodyInput.value = "";
+          categoryInput.value = "";
+          tagsInput.value = "";
+          setStatus("追加しました！");
+        } else {
+          await updateDoc(doc(db, "users", currentUser.uid, "memos", editingId), {
+            title, body, category, tags,
+            updatedAt: serverTimestamp()
+          });
+          setStatus("更新しました！");
+          setEditMode(null);
+        }
       } catch (e) {
         console.error(e);
-        setStatus("追加失敗: permission-denied なら Firestore ルールを確認。", true);
+        setStatus("追加/更新に失敗しました（Firestoreルール/権限）。", true);
       } finally {
         addBtn.disabled = false;
       }
     }
-    addBtn.addEventListener("click", addMemo);
 
-    // ---- delete all (this user only)
+    addBtn.addEventListener("click", upsertMemo);
+
+    // ---------- delete all ----------
     async function deleteAll() {
       if (!currentUser) return;
       if (!confirm("このユーザーのメモを全削除します。よろしいですか？")) return;
@@ -311,6 +503,7 @@
 
         await batch.commit();
         setStatus(`全削除しました（${count}件）`);
+        setEditMode(null);
       } catch (e) {
         console.error(e);
         setStatus("全削除に失敗しました。", true);
@@ -320,7 +513,7 @@
 
     reloadBtn.addEventListener("click", () => location.reload());
 
-    // ---- auth buttons
+    // ---------- auth ----------
     loginBtn.addEventListener("click", async () => {
       setStatus("ログイン中…");
       await signInWithRedirect(auth, provider);
@@ -329,17 +522,21 @@
       await signOut(auth);
     });
 
-    // ---- auth + subscribe
+    // ---------- subscribe ----------
     onAuthStateChanged(auth, async (user) => {
-      // リダイレクト復帰（念のため）
       try { await getRedirectResult(auth); } catch (e) {}
 
       currentUser = user;
 
-      // 既存購読解除
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      if (unsubscribeMemos) { unsubscribeMemos(); unsubscribeMemos = null; }
+      if (unsubscribeCats)  { unsubscribeCats();  unsubscribeCats  = null; }
+
       allMemos = [];
+      categories = [];
       listEl.innerHTML = "";
+      renderCategorySelects();
+      renderCategoryPanel();
+      setEditMode(null);
 
       if (!user) {
         loginBtn.classList.remove("hidden");
@@ -353,26 +550,36 @@
       logoutBtn.classList.remove("hidden");
       userInfo.textContent = `ログイン中：${user.displayName ?? ""}`;
 
-      // Firestore購読（createdAt desc）
-      const q = query(memosCol(user.uid), orderBy("createdAt", "desc"));
-      setStatus("同期中…");
+      // categories
+      const qc = query(catsCol(user.uid), orderBy("name"));
+      unsubscribeCats = onSnapshot(qc, (snap) => {
+        categories = snap.docs.map(d => ({ id: d.id, name: (d.data()?.name ?? "").toString() })).filter(c => c.name);
+        renderCategorySelects();
+        renderCategoryPanel();
+        applyFilterAndRender();
+      }, (err) => {
+        console.error(err);
+        setStatus("カテゴリ読み込みに失敗（ルール/権限）。", true);
+      });
 
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        allMemos = snapshot.docs.map(d => {
+      // memos
+      const qm = query(memosCol(user.uid), orderBy("createdAt", "desc"));
+      setStatus("同期中…");
+      unsubscribeMemos = onSnapshot(qm, (snap) => {
+        allMemos = snap.docs.map(d => {
           const data = d.data() || {};
           return {
             id: d.id,
             title: data.title ?? "",
             body: data.body ?? "",
             category: data.category ?? "",
-            tags: Array.isArray(data.tags) ? data.tags : [],
-            createdAt: data.createdAt ?? null
+            tags: Array.isArray(data.tags) ? data.tags : []
           };
         });
         applyFilterAndRender();
       }, (err) => {
         console.error(err);
-        setStatus("読み込みに失敗（Firestoreルール/設定を確認）。", true);
+        setStatus("メモ読み込みに失敗（ルール/権限）。", true);
       });
     });
   </script>
