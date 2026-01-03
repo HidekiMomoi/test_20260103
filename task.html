@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>メモ / タスク</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; }
+    .row { display: flex; gap: 8px; }
+    input[type="text"] { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 12px; font-size: 14px; cursor: pointer; }
+    ul { list-style: none; padding: 0; margin: 16px 0 0; }
+    li { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 8px; }
+    li.done .text { text-decoration: line-through; opacity: .6; }
+    .text { flex: 1; word-break: break-word; }
+    .muted { color: #666; font-size: 12px; margin-top: 10px; }
+    .danger { border: 1px solid #f0b; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>📝 メモ / タスク</h1>
+
+    <div class="row">
+      <input id="input" type="text" placeholder="例：Firebase勉強 15分 / 買い物 / メール返す" />
+      <button id="addBtn">追加</button>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
+      <button id="clearDoneBtn">完了を削除</button>
+      <button id="clearAllBtn" class="danger">全部削除</button>
+    </div>
+
+    <ul id="list"></ul>
+
+    <div class="muted">
+      ※データはこの端末のブラウザ内（localStorage）に保存されます（無料・サーバー不要）
+    </div>
+  </div>
+
+  <script>
+    // --- storage key ---
+    var KEY = "memo_tasks_v1";
+
+    // --- state ---
+    var tasks = load();
+
+    // --- elements ---
+    var input = document.getElementById("input");
+    var list = document.getElementById("list");
+    var addBtn = document.getElementById("addBtn");
+    var clearDoneBtn = document.getElementById("clearDoneBtn");
+    var clearAllBtn = document.getElementById("clearAllBtn");
+
+    // --- events ---
+    addBtn.addEventListener("click", addTask);
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") addTask();
+    });
+
+    clearDoneBtn.addEventListener("click", function() {
+      tasks = tasks.filter(function(t) { return !t.done; });
+      save(tasks);
+      render();
+    });
+
+    clearAllBtn.addEventListener("click", function() {
+      if (!confirm("全部消します。ほんとにOK？")) return;
+      tasks = [];
+      save(tasks);
+      render();
+    });
+
+    // --- functions ---
+    function addTask() {
+      var text = (input.value || "").trim();
+      if (!text) return;
+
+      tasks.unshift({
+        id: String(Date.now()) + "_" + Math.random().toString(16).slice(2),
+        text: text,
+        done: false,
+        createdAt: Date.now()
+      });
+
+      input.value = "";
+      save(tasks);
+      render();
+    }
+
+    function toggleDone(id) {
+      tasks = tasks.map(function(t) {
+        if (t.id === id) t.done = !t.done;
+        return t;
+      });
+      save(tasks);
+      render();
+    }
+
+    function removeTask(id) {
+      tasks = tasks.filter(function(t) { return t.id !== id; });
+      save(tasks);
+      render();
+    }
+
+    function render() {
+      list.innerHTML = "";
+
+      if (tasks.length === 0) {
+        var empty = document.createElement("li");
+        empty.innerHTML = '<span class="text">まだメモがありません。上の欄から追加してみて！</span>';
+        list.appendChild(empty);
+        return;
+      }
+
+      tasks.forEach(function(t) {
+        var li = document.createElement("li");
+        if (t.done) li.classList.add("done");
+
+        var chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.checked = !!t.done;
+        chk.addEventListener("change", function() { toggleDone(t.id); });
+
+        var span = document.createElement("span");
+        span.className = "text";
+        span.textContent = t.text;
+
+        var del = document.createElement("button");
+        del.textContent = "削除";
+        del.addEventListener("click", function() { removeTask(t.id); });
+
+        li.appendChild(chk);
+        li.appendChild(span);
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function save(arr) {
+      localStorage.setItem(KEY, JSON.stringify(arr));
+    }
+
+    // initial render
+    render();
+  </script>
+</body>
+</html>
