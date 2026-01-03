@@ -10,6 +10,13 @@
 <button onclick="alert('ボタン押された！')">
   クリックしてみて
 </button>
-  
+  <input id="name" placeholder="名前を入力">
+<button onclick="show()">表示</button>
+
+<script>
+function show() {
+  alert(document.getElementById('name').value);
+}
+</script>
 </body>
 </html>
