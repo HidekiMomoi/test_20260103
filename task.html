@@ -11,7 +11,7 @@
     h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
     h1 span { font-size: 34px; }
     .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     input[type="text"]{ flex: 1 1 260px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
     input[type="date"]{ padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
     button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
@@ -24,7 +24,7 @@
     .titleLine{ display:flex; align-items:center; gap:10px; }
     .titleText{ font-size:18px; }
     .done .titleText{ text-decoration: line-through; color:#777; }
-    .meta{ font-size:13px; color:#666; display:flex; gap:10px; flex-wrap:wrap; }
+    .meta{ font-size:13px; color:#666; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .badge{ font-size:12px; padding:2px 8px; border-radius:999px; background:#f0f1ff; border:1px solid #dde0ff; color:#3a42c6; }
     .badge.overdue{ background:#fff1f1; border-color:#ffd0d0; color:#c73737; }
     .badge.today{ background:#f1fff4; border-color:#c9f5d3; color:#1d7a35; }
@@ -32,7 +32,7 @@
     .small{ font-size:12px; color:#777; }
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
-    .spacer { flex: 1; }
+    .sep{ flex: 0 0 100%; height:0; }
   </style>
 </head>
 
@@ -52,38 +52,34 @@
         <button id="deleteAllBtn" class="danger">全部削除</button>
         <button id="reloadBtn">再読み込み</button>
 
-        <span class="spacer"></span>
+        <span class="sep"></span>
 
         <button id="loginBtn">Googleでログイン</button>
         <button id="logoutBtn" class="hidden">ログアウト</button>
         <span id="userInfo" class="small"></span>
-      </div>
 
-      <div class="tools">
         <span id="status" class="small"></span>
       </div>
 
       <ul id="list"></ul>
 
       <div class="footer">
-        ※ データは <b>Firebase Firestore</b> に保存されます（無料枠あり）。<br/>
-        ※ 期限はカレンダーから選択できます。<br/>
-        ※ ログイン後は <b>自分のデータだけ</b> 表示されます。
+        ※ データは <b>Firebase Firestore</b> に保存されます（ユーザー別）。<br/>
+        ※ 期限はカレンダーから選択できます。
       </div>
     </div>
   </div>
 
   <script type="module">
-    // =========================================
-    // Firebase SDK（CDN / module）
-    // =========================================
+    // ==============================
+    // Firebase SDK（CDN）
+    // ==============================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
     import {
       getAuth,
       GoogleAuthProvider,
-      signInWithRedirect,
-      getRedirectResult,
+      signInWithPopup,
       onAuthStateChanged,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -103,9 +99,9 @@
       writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // =========================================
-    // firebaseConfig（あなたの設定）
-    // =========================================
+    // ==============================
+    // 1) firebaseConfig（あなたのやつ）
+    // ==============================
     const firebaseConfig = {
       apiKey: "AIzaSyBa1uHGYTRft3O0nGiCSTdOCnjnuWHD-R8",
       authDomain: "task-app-72b7d.firebaseapp.com",
@@ -115,26 +111,24 @@
       appId: "1:677238706690:web:f8fe3af7bd3efcb9900d1b"
     };
 
-    // =========================================
-    // 初期化
-    // =========================================
+    // ==============================
+    // 2) 初期化
+    // ==============================
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
 
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // =========================================
-    // DOM
-    // =========================================
+    // ==============================
+    // 3) DOM
+    // ==============================
     const taskInput = document.getElementById("taskInput");
     const dueInput  = document.getElementById("dueInput");
     const addBtn    = document.getElementById("addBtn");
-
     const deleteDoneBtn = document.getElementById("deleteDoneBtn");
     const deleteAllBtn  = document.getElementById("deleteAllBtn");
     const reloadBtn     = document.getElementById("reloadBtn");
-
     const listEl   = document.getElementById("list");
     const statusEl = document.getElementById("status");
 
@@ -142,12 +136,12 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const userInfo  = document.getElementById("userInfo");
 
-    // date input 初期値（今日）
+    // date input 初期値
     dueInput.value = toDateStr(new Date());
 
-    // =========================================
-    // 便利関数
-    // =========================================
+    // ==============================
+    // 4) 便利関数
+    // ==============================
     function toDateStr(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -164,7 +158,7 @@
     }
 
     function escapeHtml(s) {
-      return String(s)
+      return String(s ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -177,37 +171,37 @@
       statusEl.className = "small" + (isWarn ? " warn" : "");
     }
 
-    // =========================================
-    // Firestore: ユーザー別コレクション
-    // users/{uid}/tasks
-    // =========================================
     function tasksCol(uid) {
+      // ユーザー別の保存先
       return collection(db, "users", uid, "tasks");
     }
 
-    function taskDoc(uid, id) {
-      return doc(db, "users", uid, "tasks", id);
+    function needLogin() {
+      setStatus("未ログインです。Googleでログインしてください。", true);
     }
 
-    // =========================================
-    // Auth: ログイン/ログアウト
-    // =========================================
+    // ==============================
+    // 5) ログイン/ログアウト（popup）
+    // ==============================
     loginBtn.addEventListener("click", async () => {
-      setStatus("ログイン中…");
-      await signInWithRedirect(auth, provider);
+      try {
+        setStatus("ログイン中…");
+        await signInWithPopup(auth, provider);
+        // onAuthStateChanged が走る
+      } catch (e) {
+        console.error(e);
+        setStatus(`ログイン失敗: ${e?.code || e?.message}`, true);
+      }
     });
 
     logoutBtn.addEventListener("click", async () => {
       await signOut(auth);
     });
 
-    // =========================================
-    // Firestore: 追加
-    // =========================================
-    async function addTask() {
-      const user = auth.currentUser;
-      if (!user) { setStatus("ログインしてください。", true); return; }
-
+    // ==============================
+    // 6) Firestore操作（user 必須）
+    // ==============================
+    async function addTask(uid) {
       const title = taskInput.value.trim();
       const dueDate = dueInput.value || "";
 
@@ -221,7 +215,7 @@
       setStatus("追加中…");
 
       try {
-        await addDoc(tasksCol(user.uid), {
+        await addDoc(tasksCol(uid), {
           title,
           dueDate,
           completed: false,
@@ -233,59 +227,41 @@
         setStatus("追加しました！");
       } catch (e) {
         console.error(e);
-        setStatus("追加に失敗しました（Firestoreルール/設定を確認）。", true);
+        setStatus(`追加に失敗: ${e?.code || e?.message}`, true);
       } finally {
         addBtn.disabled = false;
       }
     }
 
-    addBtn.addEventListener("click", addTask);
-    taskInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") addTask();
-    });
-
-    // =========================================
-    // Firestore: 更新（完了切替）
-    // =========================================
     async function toggleDone(uid, id, current) {
       try {
-        await updateDoc(taskDoc(uid, id), { completed: !current });
+        await updateDoc(doc(db, "users", uid, "tasks", id), { completed: !current });
       } catch (e) {
         console.error(e);
-        setStatus("更新に失敗しました。", true);
+        setStatus(`更新に失敗: ${e?.code || e?.message}`, true);
       }
     }
 
-    // =========================================
-    // Firestore: 削除（1件）
-    // =========================================
     async function deleteOne(uid, id) {
       try {
-        await deleteDoc(taskDoc(uid, id));
+        await deleteDoc(doc(db, "users", uid, "tasks", id));
       } catch (e) {
         console.error(e);
-        setStatus("削除に失敗しました。", true);
+        setStatus(`削除に失敗: ${e?.code || e?.message}`, true);
       }
     }
 
-    // =========================================
-    // Firestore: 完了を削除
-    // =========================================
-    async function deleteDone() {
-      const user = auth.currentUser;
-      if (!user) { setStatus("ログインしてください。", true); return; }
-
+    async function deleteDone(uid) {
       setStatus("完了タスクを削除中…");
-
       try {
-        const snap = await getDocs(query(tasksCol(user.uid)));
+        const snap = await getDocs(query(tasksCol(uid)));
         const batch = writeBatch(db);
-
         let count = 0;
+
         snap.forEach(d => {
           const data = d.data();
           if (data.completed === true) {
-            batch.delete(taskDoc(user.uid, d.id));
+            batch.delete(doc(db, "users", uid, "tasks", d.id));
             count++;
           }
         });
@@ -299,28 +275,21 @@
         setStatus(`完了タスクを ${count} 件削除しました。`);
       } catch (e) {
         console.error(e);
-        setStatus("完了削除に失敗しました。", true);
+        setStatus(`完了削除に失敗: ${e?.code || e?.message}`, true);
       }
     }
-    deleteDoneBtn.addEventListener("click", deleteDone);
 
-    // =========================================
-    // Firestore: 全部削除
-    // =========================================
-    async function deleteAll() {
-      const user = auth.currentUser;
-      if (!user) { setStatus("ログインしてください。", true); return; }
-
+    async function deleteAll(uid) {
       if (!confirm("全部削除します。よろしいですか？")) return;
 
       setStatus("全削除中…");
       try {
-        const snap = await getDocs(query(tasksCol(user.uid)));
+        const snap = await getDocs(query(tasksCol(uid)));
         const batch = writeBatch(db);
-
         let count = 0;
+
         snap.forEach(d => {
-          batch.delete(taskDoc(user.uid, d.id));
+          batch.delete(doc(db, "users", uid, "tasks", d.id));
           count++;
         });
 
@@ -333,102 +302,137 @@
         setStatus(`全タスクを ${count} 件削除しました。`);
       } catch (e) {
         console.error(e);
-        setStatus("全削除に失敗しました。", true);
+        setStatus(`全削除に失敗: ${e?.code || e?.message}`, true);
       }
     }
-    deleteAllBtn.addEventListener("click", deleteAll);
 
-    reloadBtn.addEventListener("click", () => location.reload());
-
-    // =========================================
-    // 表示（onSnapshot）: ログイン後に開始
-    // =========================================
+    // ==============================
+    // 7) リアルタイム表示（ログイン状態で切替）
+    // ==============================
     let unsubscribe = null;
+    let currentUid = null;
 
-    onAuthStateChanged(auth, async (user) => {
-      // リダイレクト復帰結果（失敗してもOK）
-      try { await getRedirectResult(auth); } catch (_) {}
-
-      // 既存の購読解除
+    function stopListen() {
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
+    }
 
-      // 未ログイン
-      if (!user) {
-        loginBtn.classList.remove("hidden");
-        logoutBtn.classList.add("hidden");
-        userInfo.textContent = "";
-        listEl.innerHTML = "";
-        setStatus("未ログインです。Googleでログインしてください。", true);
+    function renderSnapshot(uid, snapshot) {
+      listEl.innerHTML = "";
+
+      if (snapshot.empty) {
+        setStatus("タスクはまだありません。");
         return;
       }
 
-      // ログイン中
-      loginBtn.classList.add("hidden");
-      logoutBtn.classList.remove("hidden");
-      userInfo.textContent = `ログイン中：${user.displayName ?? ""}`;
+      let total = 0;
+      let done = 0;
 
-      setStatus("同期中…");
+      snapshot.forEach((d) => {
+        total++;
+        const data = d.data();
+        const id = d.id;
 
+        const title = escapeHtml(data.title ?? "");
+        const due = data.dueDate ?? "";
+        const completed = data.completed === true;
+        if (completed) done++;
+
+        const li = document.createElement("li");
+        if (completed) li.classList.add("done");
+
+        li.innerHTML = `
+          <input type="checkbox" ${completed ? "checked" : ""} aria-label="完了" />
+          <div class="taskMain">
+            <div class="titleLine">
+              <div class="titleText">${title}</div>
+            </div>
+            <div class="meta">
+              ${badgeForDue(due)}
+              <span class="small">${completed ? "✅ 完了" : "⬜ 未完了"}</span>
+            </div>
+          </div>
+          <button>削除</button>
+        `;
+
+        li.querySelector("input").addEventListener("change", () => toggleDone(uid, id, completed));
+        li.querySelector("button").addEventListener("click", () => deleteOne(uid, id));
+
+        listEl.appendChild(li);
+      });
+
+      setStatus(`表示中：${total}件（完了 ${done} / 未完了 ${total - done}）`);
+    }
+
+    function startListen(uid) {
+      stopListen();
+
+      // 期限 → 作成日時 で並べる（※複合インデックスが必要になることあり）
       const q = query(
-        tasksCol(user.uid),
+        tasksCol(uid),
         orderBy("dueDate"),
         orderBy("createdAt")
       );
 
+      setStatus("同期中…");
+
       unsubscribe = onSnapshot(q, (snapshot) => {
-        listEl.innerHTML = "";
-
-        if (snapshot.empty) {
-          setStatus("タスクはまだありません。");
-          return;
-        }
-
-        let total = 0;
-        let done  = 0;
-
-        snapshot.forEach((d) => {
-          total++;
-
-          const data = d.data();
-          const id = d.id;
-
-          const title = escapeHtml(data.title ?? "");
-          const due = data.dueDate ?? "";
-          const completed = data.completed === true;
-          if (completed) done++;
-
-          const li = document.createElement("li");
-          if (completed) li.classList.add("done");
-
-          li.innerHTML = `
-            <input type="checkbox" ${completed ? "checked" : ""} aria-label="完了" />
-            <div class="taskMain">
-              <div class="titleLine">
-                <div class="titleText">${title}</div>
-              </div>
-              <div class="meta">
-                ${badgeForDue(due)}
-                <span class="small">${completed ? "✅ 完了" : "⬜ 未完了"}</span>
-              </div>
-            </div>
-            <button>削除</button>
-          `;
-
-          li.querySelector("input").addEventListener("change", () => toggleDone(user.uid, id, completed));
-          li.querySelector("button").addEventListener("click", () => deleteOne(user.uid, id));
-
-          listEl.appendChild(li);
-        });
-
-        setStatus(`表示中：${total}件（完了 ${done} / 未完了 ${total - done}）`);
+        renderSnapshot(uid, snapshot);
       }, (err) => {
         console.error(err);
-        setStatus("読み込みに失敗（Firestoreルール/設定を確認）。", true);
+        setStatus(`読み込みに失敗: ${err?.code || err?.message}`, true);
       });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      stopListen();
+      listEl.innerHTML = "";
+
+      if (!user) {
+        currentUid = null;
+        loginBtn.classList.remove("hidden");
+        logoutBtn.classList.add("hidden");
+        userInfo.textContent = "";
+        needLogin();
+        return;
+      }
+
+      currentUid = user.uid;
+      loginBtn.classList.add("hidden");
+      logoutBtn.classList.remove("hidden");
+      userInfo.textContent = `ログイン中：${user.displayName ?? ""}`;
+
+      startListen(user.uid);
     });
+
+    // ==============================
+    // 8) ボタンイベント（UIDが必要）
+    // ==============================
+    addBtn.addEventListener("click", () => {
+      if (!currentUid) return needLogin();
+      addTask(currentUid);
+    });
+
+    taskInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        if (!currentUid) return needLogin();
+        addTask(currentUid);
+      }
+    });
+
+    deleteDoneBtn.addEventListener("click", () => {
+      if (!currentUid) return needLogin();
+      deleteDone(currentUid);
+    });
+
+    deleteAllBtn.addEventListener("click", () => {
+      if (!currentUid) return needLogin();
+      deleteAll(currentUid);
+    });
+
+    reloadBtn.addEventListener("click", () => location.reload());
   </script>
 </body>
 </html>
