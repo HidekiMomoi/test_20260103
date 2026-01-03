@@ -6,15 +6,22 @@
   <title>メモ（Firebase）</title>
   <style>
     :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
-    body { margin:0; background:#f7f7fb; color:#111; }
-    .wrap { max-width: 920px; margin: 18px auto; padding: 0 14px 40px; }
-    h1 { font-size: 28px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
-    h1 span { font-size: 32px; }
+    body { margin: 0; background:#f7f7fb; color:#111; }
+    .wrap { max-width: 980px; margin: 20px auto; padding: 0 14px 40px; }
+    h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 34px; }
     .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    input[type="text"]{ flex: 1 1 260px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
-    textarea{ flex: 1 1 520px; min-height: 90px; resize: vertical; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
-    button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:stretch; }
+    input[type="text"]{
+      flex: 1 1 320px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px;
+    }
+    textarea{
+      width:100%; min-height: 130px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px;
+      resize: vertical;
+    }
+    button{
+      padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer;
+    }
     button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
     button.danger{ border-color:#ff4d6d; color:#ff4d6d; }
     .tools { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
@@ -22,17 +29,22 @@
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
 
+    .grid { display:grid; grid-template-columns: 1fr 160px; gap:10px; margin-top:10px; }
+    @media (max-width: 720px){
+      .grid { grid-template-columns: 1fr; }
+    }
+
     .list { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
     .memo {
       background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px;
-      display:flex; gap:10px; align-items:flex-start;
+      display:flex; gap:12px; align-items:flex-start;
     }
-    .memoMain { flex:1; display:flex; flex-direction:column; gap:6px; }
-    .memoTitle { font-weight:700; font-size:16px; }
-    .memoBody { white-space:pre-wrap; color:#222; }
-    .meta { display:flex; gap:10px; flex-wrap:wrap; color:#666; font-size:12px; }
+    .memoMain { flex:1; min-width: 0; }
+    .memoTitle { font-size:18px; font-weight:700; margin:0 0 6px; word-break: break-word; }
+    .memoBody { font-size:15px; margin:0; white-space: pre-wrap; word-break: break-word; }
+    .meta { margin-top:8px; font-size:12px; color:#666; display:flex; gap:10px; flex-wrap:wrap; }
     .badge { font-size:12px; padding:2px 8px; border-radius:999px; background:#f0f1ff; border:1px solid #dde0ff; color:#3a42c6; }
-    .footer { font-size:13px; color:#666; margin-top:10px; }
+    .footer{ font-size:13px; color:#666; margin-top:12px; }
   </style>
 </head>
 
@@ -41,31 +53,27 @@
     <h1><span>🗒️</span> メモ（Firebase）</h1>
 
     <div class="card">
-      <!-- 入力 -->
       <div class="row">
-        <input id="titleInput" type="text" placeholder="タイトル（例：買い物、アイデア、調べたこと）" />
+        <input id="titleInput" type="text" placeholder="タイトル（例：経費精算 / PANETメモ / 連絡事項）" />
       </div>
-      <div class="row" style="margin-top:10px;">
-        <textarea id="bodyInput" placeholder="本文（メモ内容）"></textarea>
+
+      <div class="grid">
+        <textarea id="bodyInput" placeholder="本文（例：12/1 搭乗分の領収書が届いてから経費申請する）"></textarea>
         <button id="addBtn" class="primary">追加</button>
       </div>
 
-      <!-- 検索＋操作 -->
       <div class="tools">
         <input id="searchInput" type="text" placeholder="検索（タイトル・本文）" />
         <button id="reloadBtn">再読み込み</button>
-        <button id="deleteAllBtn" class="danger hidden">全削除</button>
+        <button id="deleteAllBtn" class="danger">全削除</button>
+
+        <button id="loginBtn">Googleでログイン</button>
+        <button id="logoutBtn" class="hidden">ログアウト</button>
+
+        <span id="userInfo" class="small"></span>
         <span id="status" class="small"></span>
       </div>
 
-      <!-- ログイン -->
-      <div class="tools">
-        <button id="loginBtn">Googleでログイン</button>
-        <button id="logoutBtn" class="hidden">ログアウト</button>
-        <span id="userInfo" class="small"></span>
-      </div>
-
-      <!-- 一覧 -->
       <div id="list" class="list"></div>
 
       <div class="footer">
@@ -76,49 +84,58 @@
   </div>
 
   <script type="module">
-    // ===== Firebase SDK（CDN）=====
+    // ---- Firebase SDK（CDN / ES Modules）
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
-      onAuthStateChanged, signOut
+      getAuth,
+      GoogleAuthProvider,
+      signInWithRedirect,
+      getRedirectResult,
+      onAuthStateChanged,
+      signOut
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
     import {
-      getFirestore, collection, addDoc, deleteDoc, doc,
-      onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch
+      getFirestore,
+      collection,
+      addDoc,
+      deleteDoc,
+      doc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp,
+      getDocs,
+      writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ===== config外だし（同フォルダに firebase-config.js を置く）=====
+    // ---- 外だし config
     import { firebaseConfig } from "./firebase-config.js";
 
-    // ===== 初期化 =====
+    // ---- init
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // ===== DOM =====
-    const titleInput = document.getElementById("titleInput");
-    const bodyInput = document.getElementById("bodyInput");
-    const addBtn = document.getElementById("addBtn");
+    // ---- DOM
+    const titleInput  = document.getElementById("titleInput");
+    const bodyInput   = document.getElementById("bodyInput");
+    const addBtn      = document.getElementById("addBtn");
     const searchInput = document.getElementById("searchInput");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const deleteAllBtn = document.getElementById("deleteAllBtn");
-    const listEl = document.getElementById("list");
-    const statusEl = document.getElementById("status");
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const userInfo = document.getElementById("userInfo");
+    const reloadBtn   = document.getElementById("reloadBtn");
+    const deleteAllBtn= document.getElementById("deleteAllBtn");
+    const loginBtn    = document.getElementById("loginBtn");
+    const logoutBtn   = document.getElementById("logoutBtn");
+    const userInfoEl  = document.getElementById("userInfo");
+    const statusEl    = document.getElementById("status");
+    const listEl      = document.getElementById("list");
 
-    // ===== 状態 =====
-    let currentUser = null;
-    let unsubscribe = null;
-    let cache = []; // 検索用の手元キャッシュ
-
-    function setStatus(text, isWarn=false) {
+    function setStatus(text, isWarn=false){
       statusEl.textContent = text;
       statusEl.className = "small" + (isWarn ? " warn" : "");
     }
-    function escapeHtml(s) {
+    function escapeHtml(s){
       return (s ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -126,86 +143,30 @@
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
-    function fmtDate(ts) {
-      try {
-        const d = ts?.toDate ? ts.toDate() : null;
-        if (!d) return "";
-        const y = d.getFullYear();
-        const m = String(d.getMonth()+1).padStart(2,"0");
-        const day = String(d.getDate()).padStart(2,"0");
-        const hh = String(d.getHours()).padStart(2,"0");
-        const mm = String(d.getMinutes()).padStart(2,"0");
-        return `${y}/${m}/${day} ${hh}:${mm}`;
-      } catch { return ""; }
-    }
 
-    // ユーザー別コレクション：users/{uid}/memos
-    function memosCol(uid) {
+    function memosCol(uid){
       return collection(db, "users", uid, "memos");
     }
 
-    // ===== 描画（検索フィルタ適用）=====
-    function render() {
-      const q = (searchInput.value || "").trim().toLowerCase();
-      const items = q
-        ? cache.filter(x =>
-            (x.title||"").toLowerCase().includes(q) ||
-            (x.body||"").toLowerCase().includes(q)
-          )
-        : cache;
+    // ---- UI handlers
+    reloadBtn.addEventListener("click", () => location.reload());
 
-      listEl.innerHTML = "";
-      if (items.length === 0) {
-        setStatus(q ? "該当なし（検索条件）" : "メモはまだありません。");
-        return;
-      }
+    loginBtn.addEventListener("click", async () => {
+      setStatus("ログイン中…");
+      await signInWithRedirect(auth, provider);
+    });
 
-      setStatus(`表示中：${items.length}件（全 ${cache.length}件）`);
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      setStatus("ログアウトしました。");
+    });
 
-      for (const m of items) {
-        const el = document.createElement("div");
-        el.className = "memo";
-        const title = escapeHtml(m.title || "(無題)");
-        const body = escapeHtml(m.body || "");
-        const created = fmtDate(m.createdAt);
-
-        el.innerHTML = `
-          <div class="memoMain">
-            <div class="memoTitle">${title}</div>
-            <div class="memoBody">${body}</div>
-            <div class="meta">
-              ${created ? `<span class="badge">作成：${created}</span>` : ""}
-            </div>
-          </div>
-          <button class="danger">削除</button>
-        `;
-
-        el.querySelector("button").addEventListener("click", async () => {
-          if (!currentUser) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "memos", m.id));
-          } catch (e) {
-            console.error(e);
-            setStatus("削除に失敗しました（ルール/権限）。", true);
-          }
-        });
-
-        listEl.appendChild(el);
-      }
-    }
-
-    searchInput.addEventListener("input", render);
-
-    // ===== 追加 =====
-    async function addMemo() {
-      if (!currentUser) {
-        setStatus("未ログインです。Googleでログインしてください。", true);
-        return;
-      }
+    // ---- add memo
+    async function addMemo(currentUser){
       const title = titleInput.value.trim();
-      const body = bodyInput.value.trim();
+      const body  = bodyInput.value.trim();
 
-      if (!title && !body) {
+      if (!title && !body){
         setStatus("タイトルか本文を入力してください。", true);
         return;
       }
@@ -213,93 +174,164 @@
       addBtn.disabled = true;
       setStatus("追加中…");
 
-      try {
+      try{
         await addDoc(memosCol(currentUser.uid), {
-          title: title || "(無題)",
+          title,
           body,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
+
         titleInput.value = "";
         bodyInput.value = "";
         titleInput.focus();
         setStatus("追加しました！");
-      } catch (e) {
+      }catch(e){
         console.error(e);
         setStatus("追加に失敗しました（Firestoreルール/権限）。", true);
-      } finally {
+      }finally{
         addBtn.disabled = false;
       }
     }
 
-    addBtn.addEventListener("click", addMemo);
+    // ---- delete one
+    async function deleteOne(uid, id){
+      try{
+        await deleteDoc(doc(db, "users", uid, "memos", id));
+      }catch(e){
+        console.error(e);
+        setStatus("削除に失敗しました。", true);
+      }
+    }
 
-    // ===== 全削除（ログイン時のみ表示）=====
-    async function deleteAll() {
-      if (!currentUser) return;
-      if (!confirm("全メモを削除します。よろしいですか？")) return;
-
+    // ---- delete all
+    async function deleteAll(uid){
+      if (!confirm("全削除します。よろしいですか？")) return;
       setStatus("全削除中…");
-      try {
-        const snap = await getDocs(query(memosCol(currentUser.uid)));
+
+      try{
+        const snap = await getDocs(query(memosCol(uid)));
+        if (snap.empty){
+          setStatus("削除するデータがありません。");
+          return;
+        }
+
         const batch = writeBatch(db);
         let count = 0;
-        snap.forEach(d => { batch.delete(d.ref); count++; });
-        if (count === 0) { setStatus("削除するメモがありません。"); return; }
+        snap.forEach(d => {
+          batch.delete(doc(db, "users", uid, "memos", d.id));
+          count++;
+        });
         await batch.commit();
         setStatus(`全削除しました（${count}件）。`);
-      } catch (e) {
+      }catch(e){
         console.error(e);
         setStatus("全削除に失敗しました。", true);
       }
     }
-    deleteAllBtn.addEventListener("click", deleteAll);
 
-    reloadBtn.addEventListener("click", () => location.reload());
-
-    // ===== Auth =====
-    loginBtn.addEventListener("click", async () => {
-      setStatus("ログイン中…");
-      await signInWithRedirect(auth, provider);
-    });
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
+    deleteAllBtn.addEventListener("click", () => {
+      const u = auth.currentUser;
+      if (!u){
+        setStatus("未ログインです。", true);
+        return;
+      }
+      deleteAll(u.uid);
     });
 
-    // リダイレクト戻り（失敗しても無視でOK）
-    try { await getRedirectResult(auth); } catch {}
+    // ---- render
+    function renderList(uid, docs){
+      const kw = (searchInput.value || "").trim().toLowerCase();
 
-    // ===== ログイン状態で購読開始 =====
+      listEl.innerHTML = "";
+      let shown = 0;
+
+      for (const item of docs){
+        const title = item.title ?? "";
+        const body  = item.body ?? "";
+        const hit = !kw || (title.toLowerCase().includes(kw) || body.toLowerCase().includes(kw));
+        if (!hit) continue;
+
+        shown++;
+        const div = document.createElement("div");
+        div.className = "memo";
+
+        div.innerHTML = `
+          <div class="memoMain">
+            <div class="memoTitle">${escapeHtml(title || "(無題)")}</div>
+            <p class="memoBody">${escapeHtml(body)}</p>
+            <div class="meta">
+              <span class="badge">memo</span>
+              <span>id: ${escapeHtml(item.id)}</span>
+            </div>
+          </div>
+          <button class="danger">削除</button>
+        `;
+
+        div.querySelector("button").addEventListener("click", () => deleteOne(uid, item.id));
+        listEl.appendChild(div);
+      }
+
+      if (docs.length === 0){
+        setStatus("メモはまだありません。");
+        return;
+      }
+      setStatus(`表示中：${shown}件（全${docs.length}件）`);
+    }
+
+    // ---- auth + subscribe
+    let unsubscribe = null;
+    let cacheDocs = [];
+
+    // リダイレクト復帰（失敗してもOK）
+    try{ await getRedirectResult(auth); }catch(e){}
+
     onAuthStateChanged(auth, (user) => {
-      currentUser = user;
+      if (unsubscribe){
+        unsubscribe();
+        unsubscribe = null;
+      }
+      cacheDocs = [];
+      listEl.innerHTML = "";
 
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-      cache = [];
-      render();
-
-      if (!user) {
+      if (!user){
         loginBtn.classList.remove("hidden");
         logoutBtn.classList.add("hidden");
-        deleteAllBtn.classList.add("hidden");
-        userInfo.textContent = "";
+        userInfoEl.textContent = "";
         setStatus("未ログインです。Googleでログインしてください。", true);
+
+        // 未ログイン時は追加ボタンも無効化
+        addBtn.disabled = true;
         return;
       }
 
+      // ログイン時UI
       loginBtn.classList.add("hidden");
       logoutBtn.classList.remove("hidden");
-      deleteAllBtn.classList.remove("hidden");
-      userInfo.textContent = `ログイン中：${user.displayName ?? ""}`;
+      userInfoEl.textContent = `ログイン中：${user.displayName ?? ""}`;
+      addBtn.disabled = false;
 
-      const q = query(memosCol(user.uid), orderBy("createdAt", "desc"));
+      // 追加
+      addBtn.onclick = () => addMemo(user);
+
+      // Firestore購読（作成日時の降順）
+      const q = query(
+        memosCol(user.uid),
+        orderBy("createdAt", "desc")
+      );
+
       setStatus("同期中…");
 
-      unsubscribe = onSnapshot(q, (snap) => {
-        cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        render();
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        cacheDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderList(user.uid, cacheDocs);
       }, (err) => {
         console.error(err);
-        setStatus("読み込みに失敗（Firestoreルール/設定を確認）。", true);
+        setStatus("読み込みに失敗（Firestoreルール/設定）。", true);
       });
+
+      // 検索
+      searchInput.addEventListener("input", () => renderList(user.uid, cacheDocs));
     });
   </script>
 </body>
