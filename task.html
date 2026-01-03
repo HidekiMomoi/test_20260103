@@ -3,26 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>メモ / タスク（期限つき）</title>
+  <title>メモ / タスク（編集＆完了下へ）</title>
   <style>
     body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 24px; }
-    .wrap { max-width: 720px; margin: 0 auto; }
+    .wrap { max-width: 780px; margin: 0 auto; }
     h1 { margin: 0 0 12px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     input[type="text"] { flex: 1; min-width: 220px; padding: 10px; font-size: 16px; }
     input[type="date"] { padding: 10px; font-size: 16px; }
     button { padding: 10px 12px; font-size: 14px; cursor: pointer; }
     ul { list-style: none; padding: 0; margin: 16px 0 0; }
-    li { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 8px; }
-    li.done .text { text-decoration: line-through; opacity: .6; }
-    .text { flex: 1; word-break: break-word; }
-    .meta { font-size: 12px; color: #666; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; margin-left: 6px; }
+    li { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 8px; }
+    li.done { opacity: .85; }
+    li.done .titleEdit { text-decoration: line-through; opacity: .7; }
+    .col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .titleEdit { width: 100%; padding: 8px 10px; font-size: 16px; }
+    .meta { font-size: 12px; color: #666; display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; }
     .overdue { border-color: #f55; color: #c00; }
     .today { border-color: #fa0; color: #a60; }
+    .dueEdit { font-size: 14px; padding: 6px 8px; }
+    .smallBtn { padding: 6px 10px; font-size: 12px; }
     .muted { color: #666; font-size: 12px; margin-top: 10px; }
     .danger { border: 1px solid #f0b; }
     .spacer { height: 4px; }
+    .right { display:flex; gap:8px; align-items:center; }
   </style>
 </head>
 <body>
@@ -51,7 +56,7 @@
   </div>
 
   <script>
-    var KEY = "memo_tasks_v2";
+    var KEY = "memo_tasks_v4";
 
     var tasks = load();
     var sortByDue = false;
@@ -64,8 +69,8 @@
     var clearDoneBtn = document.getElementById("clearDoneBtn");
     var clearAllBtn = document.getElementById("clearAllBtn");
 
-    // 期限の初期値：今日（空でもOKならこの行を消してOK）
-    due.value = todayStr();
+    // 追加時の期限：空欄（好みで todayStr() でもOK）
+    due.value = "";
 
     addBtn.addEventListener("click", addTask);
     input.addEventListener("keydown", function(e) {
@@ -95,15 +100,15 @@
       var text = (input.value || "").trim();
       if (!text) return;
 
-      // type="date" は "YYYY-MM-DD" が入る（未選択なら ""）
       var dueStr = (due.value || "").trim();
 
       tasks.unshift({
         id: String(Date.now()) + "_" + Math.random().toString(16).slice(2),
         text: text,
         done: false,
-        due: dueStr,        // 期限（YYYY-MM-DD or ""）
-        createdAt: Date.now()
+        due: dueStr,
+        createdAt: Date.now(),
+        doneAt: null
       });
 
       input.value = "";
@@ -111,9 +116,34 @@
       render();
     }
 
+    // ✅ 2: 完了にしたら下へ（doneAtを使って順序を安定させる）
     function toggleDone(id) {
+      var now = Date.now();
       tasks = tasks.map(function(t) {
-        if (t.id === id) t.done = !t.done;
+        if (t.id === id) {
+          t.done = !t.done;
+          t.doneAt = t.done ? now : null;
+        }
+        return t;
+      });
+      save(tasks);
+      render();
+    }
+
+    // ✅ 3: タスク名を編集（即保存）
+    function setText(id, newText) {
+      tasks = tasks.map(function(t) {
+        if (t.id === id) t.text = (newText || "").trim();
+        return t;
+      });
+      save(tasks);
+      // renderはしない（編集中にカーソルが飛ぶのを避ける）
+    }
+
+    // 期限を更新（即保存）
+    function setDue(id, dueStr) {
+      tasks = tasks.map(function(t) {
+        if (t.id === id) t.due = (dueStr || "").trim();
         return t;
       });
       save(tasks);
@@ -131,26 +161,37 @@
 
       if (tasks.length === 0) {
         var empty = document.createElement("li");
-        empty.innerHTML = '<span class="text">まだメモがありません。上の欄から追加してみて！</span>';
+        empty.innerHTML = '<div class="col">まだメモがありません。上の欄から追加してみて！</div>';
         list.appendChild(empty);
         return;
       }
 
+      // 基本の並び：未完了 → 完了（完了は doneAt 新しい順で下に寄せつつ整列）
       var view = tasks.slice();
+      view.sort(function(a, b) {
+        if (a.done !== b.done) return a.done ? 1 : -1; // 完了は下
+        if (a.done && b.done) {
+          // 完了内：新しく完了したものを上に（好みで逆にもできる）
+          return (b.doneAt || 0) - (a.doneAt || 0);
+        }
+        // 未完了内：追加順（新しいのが上）
+        return b.createdAt - a.createdAt;
+      });
 
+      // 期限で並び替えONなら：未完了の中だけ期限ソート（完了は常に下）
       if (sortByDue) {
-        view.sort(function(a, b) {
-          // 期限なしは一番後ろ
+        var undone = view.filter(function(t){ return !t.done; });
+        var done = view.filter(function(t){ return t.done; });
+
+        undone.sort(function(a, b) {
           var ad = a.due || "9999-12-31";
           var bd = b.due || "9999-12-31";
-
-          // 完了は後ろに寄せたいならこの2行をON（好み）
-          // if (a.done !== b.done) return a.done ? 1 : -1;
-
           if (ad < bd) return -1;
           if (ad > bd) return 1;
-          return b.createdAt - a.createdAt; // 同期限なら新しい方を上
+          return b.createdAt - a.createdAt;
         });
+
+        view = undone.concat(done);
       }
 
       view.forEach(function(t) {
@@ -162,45 +203,75 @@
         chk.checked = !!t.done;
         chk.addEventListener("change", function() { toggleDone(t.id); });
 
-        var textWrap = document.createElement("div");
-        textWrap.style.flex = "1";
+        var col = document.createElement("div");
+        col.className = "col";
 
-        var span = document.createElement("div");
-        span.className = "text";
-        span.textContent = t.text;
+        // タスク名編集欄
+        var titleEdit = document.createElement("input");
+        titleEdit.type = "text";
+        titleEdit.className = "titleEdit";
+        titleEdit.value = t.text || "";
+        titleEdit.placeholder = "タスク名を入力…";
 
+        // 入力中に保存（即反映）
+        titleEdit.addEventListener("input", function() {
+          setText(t.id, titleEdit.value);
+        });
+        // フォーカス外れたら再描画して表示更新（trim反映など）
+        titleEdit.addEventListener("blur", function() {
+          // 空なら自動削除したいならここで削除も可。今は残す。
+          save(tasks);
+          render();
+        });
+
+        // メタ情報（期限表示＋編集）
         var meta = document.createElement("div");
         meta.className = "meta";
 
+        var pill = document.createElement("span");
+        pill.className = "pill";
         if (t.due) {
-          var pill = document.createElement("span");
-          pill.className = "pill";
           pill.textContent = "期限: " + t.due;
-
           var cls = dueClass(t.due);
           if (cls) pill.classList.add(cls);
-
-          meta.appendChild(pill);
         } else {
-          meta.textContent = "期限なし";
+          pill.textContent = "期限なし";
         }
 
-        textWrap.appendChild(span);
-        textWrap.appendChild(meta);
+        var dueEdit = document.createElement("input");
+        dueEdit.type = "date";
+        dueEdit.className = "dueEdit";
+        dueEdit.value = t.due || "";
+        dueEdit.addEventListener("change", function() {
+          setDue(t.id, dueEdit.value);
+        });
+
+        var clearDueBtn = document.createElement("button");
+        clearDueBtn.className = "smallBtn";
+        clearDueBtn.textContent = "期限クリア";
+        clearDueBtn.addEventListener("click", function() {
+          setDue(t.id, "");
+        });
+
+        meta.appendChild(pill);
+        meta.appendChild(dueEdit);
+        meta.appendChild(clearDueBtn);
+
+        col.appendChild(titleEdit);
+        col.appendChild(meta);
 
         var del = document.createElement("button");
         del.textContent = "削除";
         del.addEventListener("click", function() { removeTask(t.id); });
 
         li.appendChild(chk);
-        li.appendChild(textWrap);
+        li.appendChild(col);
         li.appendChild(del);
         list.appendChild(li);
       });
     }
 
     function dueClass(dueStr) {
-      // dueStr: YYYY-MM-DD
       var today = todayStr();
       if (dueStr < today) return "overdue";
       if (dueStr === today) return "today";
