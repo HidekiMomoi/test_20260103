@@ -186,9 +186,10 @@
         bodyInput.value = "";
         titleInput.focus();
         setStatus("追加しました！");
-      }catch(e){
-        console.error(e);
-        setStatus("追加に失敗しました（Firestoreルール/権限）。", true);
+        } catch (e) {
+  console.error(e);
+  setStatus(`追加失敗: ${e.code ?? ""} ${e.message ?? e}`, true);
+
       }finally{
         addBtn.disabled = false;
       }
