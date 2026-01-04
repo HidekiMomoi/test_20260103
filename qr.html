@@ -20,7 +20,7 @@
 
     .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    textarea, select, input[type="number"], input[type="text"]{
+    textarea, select, input[type="number"]{
       padding:10px 10px;
       border:1px solid #d7d7e5;
       border-radius:10px;
@@ -29,8 +29,12 @@
       box-sizing:border-box;
     }
     textarea{ width:100%; min-height:120px; resize:vertical; line-height:1.5; }
-    select, input[type="number"], input[type="text"]{ width: 220px; }
-    .grow{ flex: 1 1 260px; }
+    select, input[type="number"]{ width: 220px; }
+
+    @media (max-width: 900px){
+      select, input[type="number"]{ width: 100%; }
+    }
+
     button{
       padding:9px 12px;
       border:1px solid #d7d7e5;
@@ -55,7 +59,6 @@
     }
     @media (max-width: 900px){
       .grid2{ grid-template-columns: 1fr; }
-      select, input[type="number"], input[type="text"]{ width: 100%; }
     }
 
     .qrBox{
@@ -68,10 +71,31 @@
       gap:10px;
       align-items:center;
       justify-content:center;
-      min-height: 320px;
+      min-height: 360px;
+      text-align:center;
     }
     canvas{ background:#fff; border-radius:12px; border:1px solid #eef0f7; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#444; }
+
+    /* QR下の中身表示（長い文字でも見やすく） */
+    .payload{
+      width: 100%;
+      max-width: 520px;
+      background:#fff;
+      border:1px solid #eef0f7;
+      border-radius:12px;
+      padding:10px;
+      text-align:left;
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .payloadTitle{
+      font-size:12px;
+      color:#666;
+      margin-bottom:6px;
+    }
   </style>
 </head>
 
@@ -88,7 +112,7 @@
 
     <div class="card">
       <div class="grid2">
-        <!-- Left: input -->
+        <!-- Left -->
         <div>
           <textarea id="textInput" placeholder="ここにQRにしたい文字を入力"></textarea>
 
@@ -114,28 +138,34 @@
 
           <div class="row" style="margin-top:8px;">
             <button id="copyBtn">内容をコピー</button>
-            <button id="downloadBtn">PNG保存</button>
+            <button id="downloadBtn">PNG保存（文字込み）</button>
             <span id="status" class="small"></span>
           </div>
 
           <div class="small" style="margin-top:8px;">
             ・Shift_JIS は日本語QR対応端末向け（機種によってはUTF-8必須の場合あり）<br/>
-            ・長文＋高ECCだと入り切らないことがあります（その場合はECCを下げる/短くする）<br/>
+            ・長文＋高ECCだと入り切らないことがあります（ECCを下げる/短くする）<br/>
           </div>
         </div>
 
-        <!-- Right: QR preview -->
+        <!-- Right -->
         <div class="qrBox">
           <canvas id="qrCanvas" width="260" height="260" aria-label="QRコード"></canvas>
           <div class="mono" id="metaInfo">未生成</div>
+
+          <!-- 追加：QR下に中身を表示 -->
+          <div class="payload">
+            <div class="payloadTitle">QRの中身</div>
+            <div id="payloadText">（未生成）</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- QR生成ライブラリ（QRCode.js / Kazuhiko Arase） -->
+  <!-- QR生成ライブラリ -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-  <!-- Shift_JIS 変換用（encoding-japanese） -->
+  <!-- Shift_JIS変換 -->
   <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@2.0.0/encoding.min.js"></script>
 
   <script>
@@ -153,6 +183,7 @@
     const canvas = document.getElementById("qrCanvas");
     const statusEl = document.getElementById("status");
     const metaInfo = document.getElementById("metaInfo");
+    const payloadTextEl = document.getElementById("payloadText");
 
     function setStatus(text, warn=false){
       statusEl.textContent = text;
@@ -166,36 +197,27 @@
     }
 
     function toSJISBytes(str){
-      // encoding-japanese: Unicode文字列 -> SJISバイト配列(0-255)
-      // 失敗する文字は "?" などになることがある（端末仕様）
       const unicodeArray = Encoding.stringToCode(str);
-      const sjisArray = Encoding.convert(unicodeArray, {
-        to: "SJIS",
-        from: "UNICODE"
-      });
-      return sjisArray; // number[]
+      const sjisArray = Encoding.convert(unicodeArray, { to:"SJIS", from:"UNICODE" });
+      return sjisArray;
     }
 
     function drawQRToCanvas(qr, targetCanvas, pxSize, marginModules){
       const ctx = targetCanvas.getContext("2d");
-
       const count = qr.getModuleCount();
       const totalModules = count + marginModules * 2;
 
       targetCanvas.width = pxSize;
       targetCanvas.height = pxSize;
 
-      // 1モジュールあたりのピクセル（端数は余白に吸収）
       const modulePx = Math.floor(pxSize / totalModules);
       const drawSize = modulePx * totalModules;
       const offset = Math.floor((pxSize - drawSize) / 2);
 
-      // 背景
       ctx.clearRect(0, 0, pxSize, pxSize);
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, pxSize, pxSize);
 
-      // 黒モジュール
       ctx.fillStyle = "#000";
       for (let r = 0; r < count; r++){
         for (let c = 0; c < count; c++){
@@ -208,6 +230,27 @@
       }
 
       return { moduleCount: count, modulePx, totalModules, offset };
+    }
+
+    function wrapLines(ctx, text, maxWidth){
+      // 手動で改行・折り返し（日本語対応）
+      const lines = [];
+      const rawLines = String(text).split(/\r?\n/);
+
+      for (const raw of rawLines){
+        let line = "";
+        for (const ch of raw){
+          const test = line + ch;
+          if (ctx.measureText(test).width > maxWidth && line){
+            lines.push(line);
+            line = ch;
+          }else{
+            line = test;
+          }
+        }
+        lines.push(line || ""); // 空行も保持
+      }
+      return lines;
     }
 
     function generate(){
@@ -224,17 +267,12 @@
       const margin = clamp(marginInput.value, 0, 10);
 
       try{
-        // typeNumber 0: 自動（入る最小の型）
         const qr = qrcode(0, ecc);
 
         if (enc === "sjis"){
           const sjis = toSJISBytes(text);
-          // qrcode-generator はバイト列を入れられる
           qr.addData(sjis, "Byte");
         }else{
-          // UTF-8 で入れる（qrcode-generatorの addData は文字列も可）
-          // ※内部はUTF-16扱いだが、多くの環境で読み取りOK。
-          // 文字化けが出る端末ならSJISや別方式検討。
           qr.addData(text);
         }
 
@@ -244,10 +282,14 @@
         metaInfo.textContent =
           `enc=${enc.toUpperCase()} / ECC=${ecc} / modules=${info.moduleCount} / px=${size} / margin=${margin}`;
 
+        // 追加：QRの中身を表示
+        payloadTextEl.textContent = text;
+
         setStatus("生成しました！");
       }catch(e){
         console.error(e);
         metaInfo.textContent = "生成失敗";
+        payloadTextEl.textContent = "（生成失敗）";
         setStatus("生成に失敗（長すぎ/文字種/設定）", true);
       }
     }
@@ -259,6 +301,7 @@
       ctx.fillStyle = "#fff";
       ctx.fillRect(0,0,canvas.width,canvas.height);
       metaInfo.textContent = "未生成";
+      payloadTextEl.textContent = "（未生成）";
       setStatus("クリアしました。");
       textInput.focus();
     }
@@ -274,20 +317,75 @@
       }
     }
 
-    function downloadPNG(){
+    function downloadPNGWithText(){
+      const text = textInput.value ?? "";
+      if (!text.trim()){
+        setStatus("保存する内容がありません。", true);
+        return;
+      }
+
       try{
+        // QRキャンバスを元に「QR + 文字」合成キャンバスを作る
+        const qrW = canvas.width;
+        const qrH = canvas.height;
+
+        // 合成キャンバス設定
+        const pad = 16;
+        const textAreaW = qrW;              // QRと同幅
+        const fontSize = 14;
+        const lineGap = 6;
+
+        const tmp = document.createElement("canvas");
+        const tctx = tmp.getContext("2d");
+
+        tctx.font = `${fontSize}px "Noto Sans JP", Meiryo, system-ui, sans-serif`;
+        const lines = wrapLines(tctx, text, textAreaW - pad*2);
+
+        // 高さ計算（タイトル＋本文）
+        const titleH = fontSize + 8;
+        const textH = lines.length * (fontSize + lineGap);
+        const totalH = qrH + pad + titleH + textH + pad;
+
+        tmp.width = qrW;
+        tmp.height = totalH;
+
+        // 背景
+        tctx.fillStyle = "#fff";
+        tctx.fillRect(0,0,tmp.width,tmp.height);
+
+        // QR貼り付け
+        tctx.drawImage(canvas, 0, 0);
+
+        // 文字エリア
+        let y = qrH + pad;
+
+        // タイトル
+        tctx.fillStyle = "#444";
+        tctx.font = `600 ${fontSize}px "Noto Sans JP", Meiryo, system-ui, sans-serif`;
+        tctx.fillText("QRの中身", pad, y + fontSize);
+        y += titleH;
+
+        // 本文
+        tctx.fillStyle = "#111";
+        tctx.font = `${fontSize}px "Noto Sans JP", Meiryo, system-ui, sans-serif`;
+
+        for (const line of lines){
+          tctx.fillText(line, pad, y + fontSize);
+          y += (fontSize + lineGap);
+        }
+
+        // DL
         const a = document.createElement("a");
         const ts = new Date();
-        const y = ts.getFullYear();
-        const m = String(ts.getMonth()+1).padStart(2,"0");
-        const d = String(ts.getDate()).padStart(2,"0");
-        const hh = String(ts.getHours()).padStart(2,"0");
-        const mm = String(ts.getMinutes()).padStart(2,"0");
-        a.download = `qr_${y}${m}${d}_${hh}${mm}.png`;
-        a.href = canvas.toDataURL("image/png");
+        const ymd = `${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,"0")}${String(ts.getDate()).padStart(2,"0")}`;
+        const hm = `${String(ts.getHours()).padStart(2,"0")}${String(ts.getMinutes()).padStart(2,"0")}`;
+        a.download = `qr_${ymd}_${hm}.png`;
+        a.href = tmp.toDataURL("image/png");
         a.click();
-        setStatus("PNGを保存しました。");
+
+        setStatus("PNGを保存しました（文字込み）。");
       }catch(e){
+        console.error(e);
         setStatus("保存できませんでした。", true);
       }
     }
@@ -296,7 +394,7 @@
     genBtn.addEventListener("click", generate);
     clearBtn.addEventListener("click", clearAll);
     copyBtn.addEventListener("click", copyText);
-    downloadBtn.addEventListener("click", downloadPNG);
+    downloadBtn.addEventListener("click", downloadPNGWithText);
 
     textInput.addEventListener("keydown", (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate();
