@@ -7,34 +7,89 @@
   <style>
     :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
     body { margin: 0; background:#f7f7fb; color:#111; }
-    .wrap { max-width: 920px; margin: 20px auto; padding: 0 14px 40px; }
-    h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
-    h1 span { font-size: 34px; }
-    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    input[type="text"]{ flex: 1 1 260px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
-    input[type="date"]{ padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; }
-    button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
+    .wrap { max-width: 920px; margin: 18px auto; padding: 0 12px 32px; }
+    h1 { font-size: 26px; margin: 8px 0 12px; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 30px; }
+    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+
+    /* コンパクトUI */
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    input[type="text"]{
+      flex: 1 1 260px;
+      padding:10px 10px;
+      border:1px solid #d7d7e5;
+      border-radius:10px;
+      font-size:14px;
+    }
+    input[type="date"]{
+      padding:10px 10px;
+      border:1px solid #d7d7e5;
+      border-radius:10px;
+      font-size:14px;
+    }
+    button{
+      padding:10px 12px;
+      border:1px solid #d7d7e5;
+      background:#fff;
+      border-radius:10px;
+      font-size:14px;
+      cursor:pointer;
+      line-height:1;
+    }
     button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
     button.danger{ border-color:#ff4d6d; color:#ff4d6d; }
     button.ghost{ background:#f7f7fb; }
-    .tools { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
     .small{ font-size:12px; color:#777; }
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
-    .sep{ flex: 0 0 100%; height:0; }
 
-    .filterRow { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .filterRow > * { flex: 1 1 240px; }
-    .filterRow .btns { flex: 0 0 auto; display:flex; gap:10px; }
+    /* 検索は1行で収める */
+    .filterRow{
+      margin-top:8px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    #searchInput{ flex: 1 1 320px; }
+    .filterBtns{ display:flex; gap:8px; flex: 0 0 auto; }
 
-    ul{ list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:10px; }
-    li{ background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; display:flex; align-items:center; gap:10px; }
+    /* 折りたたみ */
+    details.toolsBox{
+      margin-top:10px;
+      border:1px solid #e6e6ef;
+      border-radius:12px;
+      padding:8px 10px;
+      background:#fafaff;
+    }
+    details.toolsBox > summary{
+      cursor:pointer;
+      user-select:none;
+      font-size:13px;
+      color:#444;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    details.toolsBox > summary::-webkit-details-marker{ display:none; }
+    .toolsInner{
+      margin-top:8px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* リスト */
+    ul{ list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:10px; }
+    li{ background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:10px; display:flex; align-items:center; gap:10px; }
     .taskMain{ flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
-    .titleLine{ display:flex; align-items:center; gap:10px; }
-    .titleText{ font-size:18px; word-break:break-word; }
+    .titleText{ font-size:16px; word-break:break-word; }
     .done .titleText{ text-decoration: line-through; color:#777; }
-    .meta{ font-size:13px; color:#666; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .meta{ font-size:12px; color:#666; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
     .badge{ font-size:12px; padding:2px 8px; border-radius:999px; background:#f0f1ff; border:1px solid #dde0ff; color:#3a42c6; }
     .badge.overdue{ background:#fff1f1; border-color:#ffd0d0; color:#c73737; }
@@ -45,16 +100,13 @@
     .dueWrap { display:flex; align-items:center; gap:8px; }
     .inlineDate {
       display:flex; gap:8px; align-items:center;
-      padding:6px 8px; border:1px solid #d7d7e5; border-radius:10px; background:#fff;
+      padding:4px 6px; border:1px solid #d7d7e5; border-radius:10px; background:#fff;
     }
-    .inlineDate input[type="date"]{
-      padding:8px 8px; font-size:14px; border-radius:8px;
-    }
-    .inlineDate button{
-      padding:8px 10px; font-size:14px;
-    }
+    .inlineDate input[type="date"]{ padding:6px 6px; font-size:13px; border-radius:8px; }
+    .inlineDate button{ padding:7px 9px; font-size:13px; }
 
     .btnCol{ display:flex; gap:8px; align-items:center; }
+    .btnCol button{ padding:8px 10px; font-size:13px; }
   </style>
 </head>
 
@@ -68,40 +120,39 @@
         <input id="taskInput" type="text" placeholder="例：Firebase勉強 15分 / 買い物 / メール返す" />
         <input id="dueInput" type="date" />
         <button id="addBtn" class="primary">追加</button>
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button id="cancelEditBtn" class="hidden">編集キャンセル</button>
-        <button id="clearInputBtn" class="ghost">入力クリア</button>
+        <button id="cancelEditBtn" class="hidden">キャンセル</button>
+        <button id="clearInputBtn" class="ghost">クリア</button>
       </div>
 
       <!-- 検索 -->
       <div class="filterRow">
-        <input id="searchInput" type="text" placeholder="検索：例）買い物 / 2026-01-10 / 完了 / 今日 / 期限切れ / 未完了" />
-        <div class="btns">
+        <input id="searchInput" type="text" placeholder="検索：買い物 / 2026-01-10 / 完了 / 今日 / 期限切れ / 未完了" />
+        <div class="filterBtns">
           <button id="clearSearchBtn" class="ghost">検索クリア</button>
-          <button id="reloadBtn">再読み込み</button>
+          <button id="reloadBtn">再読込</button>
         </div>
       </div>
 
-      <div class="tools">
-        <button id="deleteDoneBtn">完了を削除</button>
-        <button id="deleteAllBtn" class="danger">全部削除</button>
+      <!-- ツールは折りたたみ（普段は閉じる） -->
+      <details class="toolsBox">
+        <summary>
+          <span>⚙️ ツール / ログイン</span>
+          <span id="status" class="small"></span>
+        </summary>
+        <div class="toolsInner">
+          <button id="deleteDoneBtn">完了削除</button>
+          <button id="deleteAllBtn" class="danger">全削除</button>
 
-        <span class="sep"></span>
-
-        <button id="loginBtn">Googleでログイン</button>
-        <button id="logoutBtn" class="hidden">ログアウト</button>
-        <span id="userInfo" class="small"></span>
-
-        <span id="status" class="small"></span>
-      </div>
+          <button id="loginBtn">Googleログイン</button>
+          <button id="logoutBtn" class="hidden">ログアウト</button>
+          <span id="userInfo" class="small"></span>
+        </div>
+        <div class="small" style="margin-top:6px;">
+          💡 期限バッジをクリック → date。変更した瞬間に自動保存。Esc / フォーカス外れでキャンセル。
+        </div>
+      </details>
 
       <ul id="list"></ul>
-
-      <div class="small" style="margin-top:10px;">
-        💡 期限バッジをクリック → dateが出ます。変更した瞬間に自動保存。Esc / フォーカス外れでキャンセル。
-      </div>
     </div>
   </div>
 
@@ -119,13 +170,11 @@
       getDocs, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // init
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // DOM
     const taskInput = document.getElementById("taskInput");
     const dueInput  = document.getElementById("dueInput");
     const addBtn    = document.getElementById("addBtn");
@@ -146,17 +195,15 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const userInfo  = document.getElementById("userInfo");
 
-    // state
     let currentUid = null;
     let unsubscribe = null;
 
     let editingId = null;
-    let allTasks = [];   // {id, title, dueDate, completed}
+    let allTasks = [];
     let searchKey = "";
 
     dueInput.value = toDateStr(new Date());
 
-    // utils
     function setStatus(text, isWarn=false) {
       statusEl.textContent = text;
       statusEl.className = "small" + (isWarn ? " warn" : "");
@@ -177,9 +224,8 @@
     }
     function tasksCol(uid) { return collection(db, "users", uid, "tasks"); }
     function stopListen() { if (unsubscribe) { unsubscribe(); unsubscribe = null; } }
-    function needLogin() { setStatus("未ログインです。Googleでログインしてください。", true); }
+    function needLogin() { setStatus("未ログインです。⚙️からGoogleログインしてね", true); }
 
-    // badge text for search
     function dueLabel(due) {
       if (!due) return "期限なし";
       const today = toDateStr(new Date());
@@ -187,13 +233,42 @@
       if (due === today) return "今日";
       return `期限 ${due}`;
     }
-
     function badgeForDue(due) {
       if (!due) return `<span class="badge none clickable" data-badge="1">期限なし</span>`;
       const today = toDateStr(new Date());
       if (due < today) return `<span class="badge overdue clickable" data-badge="1">期限切れ</span>`;
       if (due === today) return `<span class="badge today clickable" data-badge="1">今日</span>`;
       return `<span class="badge clickable" data-badge="1">期限：${due}</span>`;
+    }
+
+    function buildSearchHaystack(t) {
+      const title = (t.title ?? "");
+      const due = (t.dueDate ?? "");
+      const state = t.completed ? "完了 done" : "未完了 todo";
+      const dueText = dueLabel(due);
+      return `${title}\n${due}\n${state}\n${dueText}`.toLowerCase();
+    }
+
+    function sortTasksForUI(arr) {
+      return arr.slice().sort((a, b) => {
+        const ad = a.dueDate || "";
+        const bd = b.dueDate || "";
+        const aHas = !!ad;
+        const bHas = !!bd;
+        if (aHas && !bHas) return -1;
+        if (!aHas && bHas) return 1;
+        if (!aHas && !bHas) return 0;
+        if (ad < bd) return -1;
+        if (ad > bd) return 1;
+        return 0;
+      });
+    }
+
+    function applyFilterAndRender() {
+      const key = (searchKey || "").trim().toLowerCase();
+      const base = sortTasksForUI(allTasks);
+      const filtered = !key ? base : base.filter(t => buildSearchHaystack(t).includes(key));
+      renderList(filtered);
     }
 
     function clearInputs() {
@@ -221,103 +296,33 @@
       if (showStatus) setStatus("編集をキャンセルしました。");
     }
 
-    // auth
     loginBtn.addEventListener("click", async () => {
-      try {
-        setStatus("ログイン中…");
-        await signInWithPopup(auth, provider);
-      } catch (e) {
-        console.error(e);
-        setStatus(`ログイン失敗: ${e?.code || e?.message}`, true);
-      }
+      try { setStatus("ログイン中…"); await signInWithPopup(auth, provider); }
+      catch (e) { console.error(e); setStatus(`ログイン失敗: ${e?.code || e?.message}`, true); }
     });
+    logoutBtn.addEventListener("click", async () => { await signOut(auth); });
 
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-    });
-
-    // search (対象拡張)
-    function buildSearchHaystack(t) {
-      const title = (t.title ?? "");
-      const due = (t.dueDate ?? "");
-      const state = t.completed ? "完了 done" : "未完了 todo";
-      const dueText = dueLabel(due);
-      // 全部 lower 化して判定
-      return `${title}\n${due}\n${state}\n${dueText}`.toLowerCase();
-    }
-
-    function sortTasksForUI(arr) {
-      // 期限あり→期限なしの順。期限ありは日付昇順。同日なら createdAt っぽい順は保持したいので id のまま（安定）
-      return arr.slice().sort((a, b) => {
-        const ad = a.dueDate || "";
-        const bd = b.dueDate || "";
-        const aHas = !!ad;
-        const bHas = !!bd;
-        if (aHas && !bHas) return -1;
-        if (!aHas && bHas) return 1;
-        if (!aHas && !bHas) return 0;
-        // 両方期限あり
-        if (ad < bd) return -1;
-        if (ad > bd) return 1;
-        return 0;
-      });
-    }
-
-    function applyFilterAndRender() {
-      const key = (searchKey || "").trim().toLowerCase();
-
-      const base = sortTasksForUI(allTasks);
-
-      const filtered = !key
-        ? base
-        : base.filter(t => buildSearchHaystack(t).includes(key));
-
-      renderList(filtered);
-    }
-
-    searchInput.addEventListener("input", () => {
-      searchKey = (searchInput.value ?? "");
-      applyFilterAndRender();
-    });
-
+    searchInput.addEventListener("input", () => { searchKey = searchInput.value ?? ""; applyFilterAndRender(); });
     clearSearchBtn.addEventListener("click", () => {
-      searchInput.value = "";
-      searchKey = "";
-      applyFilterAndRender();
-      setStatus("検索をクリアしました。");
+      searchInput.value = ""; searchKey = ""; applyFilterAndRender(); setStatus("検索をクリアしました。");
     });
 
-    // CRUD
     async function upsertTask(uid) {
       const title = taskInput.value.trim();
-      const dueDate = (dueInput.value || "").trim(); // "" なら期限なし
+      const dueDate = (dueInput.value || "").trim();
 
-      if (!title) {
-        setStatus("タスク名が空です。", true);
-        taskInput.focus();
-        return;
-      }
+      if (!title) { setStatus("タスク名が空です。", true); taskInput.focus(); return; }
 
       addBtn.disabled = true;
       setStatus(editingId ? "更新中…" : "追加中…");
 
       try {
         if (!editingId) {
-          await addDoc(tasksCol(uid), {
-            title,
-            dueDate, // "" でもOK
-            completed: false,
-            createdAt: serverTimestamp()
-          });
-          taskInput.value = "";
-          taskInput.focus();
+          await addDoc(tasksCol(uid), { title, dueDate, completed:false, createdAt: serverTimestamp() });
+          taskInput.value = ""; taskInput.focus();
           setStatus("追加しました！");
         } else {
-          await updateDoc(doc(db, "users", uid, "tasks", editingId), {
-            title,
-            dueDate,
-            updatedAt: serverTimestamp()
-          });
+          await updateDoc(doc(db, "users", uid, "tasks", editingId), { title, dueDate, updatedAt: serverTimestamp() });
           clearInputs();
           setStatus("更新しました！");
         }
@@ -330,30 +335,18 @@
     }
 
     async function toggleDone(uid, id, current) {
-      try {
-        await updateDoc(doc(db, "users", uid, "tasks", id), { completed: !current });
-      } catch (e) {
-        console.error(e);
-        setStatus(`更新に失敗: ${e?.code || e?.message}`, true);
-      }
+      try { await updateDoc(doc(db, "users", uid, "tasks", id), { completed: !current }); }
+      catch (e) { console.error(e); setStatus(`更新に失敗: ${e?.code || e?.message}`, true); }
     }
 
     async function deleteOne(uid, id) {
-      try {
-        await deleteDoc(doc(db, "users", uid, "tasks", id));
-        if (editingId === id) exitEditMode(false);
-      } catch (e) {
-        console.error(e);
-        setStatus(`削除に失敗: ${e?.code || e?.message}`, true);
-      }
+      try { await deleteDoc(doc(db, "users", uid, "tasks", id)); if (editingId === id) exitEditMode(false); }
+      catch (e) { console.error(e); setStatus(`削除に失敗: ${e?.code || e?.message}`, true); }
     }
 
     async function updateDueDateInline(uid, id, newDueDate) {
       try {
-        await updateDoc(doc(db, "users", uid, "tasks", id), {
-          dueDate: newDueDate,
-          updatedAt: serverTimestamp()
-        });
+        await updateDoc(doc(db, "users", uid, "tasks", id), { dueDate: newDueDate, updatedAt: serverTimestamp() });
         setStatus("期限を更新しました！");
       } catch (e) {
         console.error(e);
@@ -367,17 +360,8 @@
         const snap = await getDocs(query(tasksCol(uid)));
         const batch = writeBatch(db);
         let count = 0;
-
-        snap.forEach(d => {
-          const data = d.data();
-          if (data.completed === true) {
-            batch.delete(doc(db, "users", uid, "tasks", d.id));
-            count++;
-          }
-        });
-
+        snap.forEach(d => { if (d.data().completed === true) { batch.delete(doc(db, "users", uid, "tasks", d.id)); count++; } });
         if (count === 0) { setStatus("完了タスクはありません。"); return; }
-
         await batch.commit();
         setStatus(`完了タスクを ${count} 件削除しました。`);
       } catch (e) {
@@ -388,20 +372,13 @@
 
     async function deleteAll(uid) {
       if (!confirm("全部削除します。よろしいですか？")) return;
-
       setStatus("全削除中…");
       try {
         const snap = await getDocs(query(tasksCol(uid)));
         const batch = writeBatch(db);
         let count = 0;
-
-        snap.forEach(d => {
-          batch.delete(doc(db, "users", uid, "tasks", d.id));
-          count++;
-        });
-
+        snap.forEach(d => { batch.delete(doc(db, "users", uid, "tasks", d.id)); count++; });
         if (count === 0) { setStatus("削除するデータがありません。"); return; }
-
         await batch.commit();
         exitEditMode(false);
         clearInputs();
@@ -412,10 +389,8 @@
       }
     }
 
-    // render
     function renderList(tasks) {
       listEl.innerHTML = "";
-
       if (!currentUid) { needLogin(); return; }
 
       if (tasks.length === 0) {
@@ -424,6 +399,7 @@
       }
 
       let doneCount = 0;
+
       tasks.forEach((t) => {
         if (t.completed) doneCount++;
 
@@ -438,9 +414,7 @@
         li.innerHTML = `
           <input type="checkbox" ${completed ? "checked" : ""} aria-label="完了" />
           <div class="taskMain">
-            <div class="titleLine">
-              <div class="titleText">${title}</div>
-            </div>
+            <div class="titleText">${title}</div>
             <div class="meta">
               <span class="dueWrap">${badgeForDue(due)}</span>
               <span class="small">${completed ? "✅ 完了" : "⬜ 未完了"}</span>
@@ -452,18 +426,15 @@
           </div>
         `;
 
-        // checkbox / edit / del
         li.querySelector("input").addEventListener("change", () => toggleDone(currentUid, id, completed));
         li.querySelector("[data-del]").addEventListener("click", () => deleteOne(currentUid, id));
         li.querySelector("[data-edit]").addEventListener("click", () => enterEditMode(t));
 
-        // due click -> inline date (auto-save on change)
         const badge = li.querySelector("[data-badge]");
         const dueWrap = li.querySelector(".dueWrap");
 
         if (badge) {
           badge.addEventListener("click", () => {
-            // すでに date 表示中なら何もしない
             if (dueWrap.querySelector("input[type=date]")) return;
 
             const before = due || "";
@@ -479,37 +450,24 @@
             const dateEl = box.querySelector("input");
             const noneBtn = box.querySelector("[data-none]");
 
-            // date変更 => 即保存
-            const onChange = async () => {
+            // 変更した瞬間に自動保存
+            dateEl.addEventListener("change", async () => {
               const newDue = (dateEl.value || "").trim();
-              // Firestore更新
               await updateDueDateInline(currentUid, id, newDue);
-              // onSnapshotの再描画で自然に戻る
-            };
-            dateEl.addEventListener("change", onChange);
+            });
 
-            // 期限なし
             noneBtn.addEventListener("click", async () => {
               await updateDueDateInline(currentUid, id, "");
             });
 
-            // Esc / フォーカス外れ => 変更せず戻す（保存しない）
             const cancelToBadge = () => { applyFilterAndRender(); };
 
-            dateEl.addEventListener("keydown", (e) => {
-              if (e.key === "Escape") cancelToBadge();
-            });
-
-            // 少し遅延して blur を拾う（クリック移動との競合防止）
-            dateEl.addEventListener("blur", () => setTimeout(() => {
-              // もし保存が走って onSnapshot で描画されてたらOK、そうでなければ戻す
-              cancelToBadge();
-            }, 120));
+            dateEl.addEventListener("keydown", (e) => { if (e.key === "Escape") cancelToBadge(); });
+            dateEl.addEventListener("blur", () => setTimeout(cancelToBadge, 120));
 
             dueWrap.innerHTML = "";
             dueWrap.appendChild(box);
 
-            // すぐ開く
             dateEl.focus();
             try { dateEl.showPicker?.(); } catch(e) {}
           });
@@ -524,11 +482,9 @@
     function startListen(uid) {
       stopListen();
 
-      // Firestore側は単純に並べておいて、UI側で「期限なし最後」を保証する
       const q = query(tasksCol(uid), orderBy("createdAt"));
 
       setStatus("同期中…");
-
       unsubscribe = onSnapshot(q, (snapshot) => {
         allTasks = snapshot.docs.map(d => {
           const data = d.data() || {};
@@ -539,7 +495,6 @@
             completed: data.completed === true
           };
         });
-
         applyFilterAndRender();
       }, (err) => {
         console.error(err);
@@ -547,35 +502,16 @@
       });
     }
 
-    // events
-    addBtn.addEventListener("click", () => {
-      if (!currentUid) return needLogin();
-      upsertTask(currentUid);
-    });
-
-    taskInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        if (!currentUid) return needLogin();
-        upsertTask(currentUid);
-      }
-    });
-
+    addBtn.addEventListener("click", () => { if (!currentUid) return needLogin(); upsertTask(currentUid); });
+    taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { if (!currentUid) return needLogin(); upsertTask(currentUid); } });
     cancelEditBtn.addEventListener("click", () => exitEditMode(true));
     clearInputBtn.addEventListener("click", clearInputs);
 
-    deleteDoneBtn.addEventListener("click", () => {
-      if (!currentUid) return needLogin();
-      deleteDone(currentUid);
-    });
-
-    deleteAllBtn.addEventListener("click", () => {
-      if (!currentUid) return needLogin();
-      deleteAll(currentUid);
-    });
+    deleteDoneBtn.addEventListener("click", () => { if (!currentUid) return needLogin(); deleteDone(currentUid); });
+    deleteAllBtn.addEventListener("click", () => { if (!currentUid) return needLogin(); deleteAll(currentUid); });
 
     reloadBtn.addEventListener("click", () => location.reload());
 
-    // auth state
     onAuthStateChanged(auth, (user) => {
       stopListen();
       listEl.innerHTML = "";
