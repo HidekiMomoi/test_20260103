@@ -27,6 +27,7 @@
       border:1px solid #d7d7e5;
       border-radius:10px;
       font-size:14px;
+      background:#fff;
     }
     button{
       padding:10px 12px;
@@ -183,7 +184,7 @@
           <span id="userInfo" class="small"></span>
         </div>
         <div class="small" style="margin-top:6px;">
-          💡 期限バッジをクリック → date。変更した瞬間に自動保存。Esc / フォーカス外れでキャンセル。
+          💡 期限バッジをクリック → dateが出ます。変更した瞬間に自動保存。Esc / フォーカス外れでキャンセル。
         </div>
       </details>
 
@@ -193,22 +194,19 @@
 
   <script type="module">
     import { firebaseConfig } from "./config.js";
+    import {
+      createFirebaseContext, onUser, signInGoogle, signOutGoogle,
+      setStatusFactory, escapeHtml, normalize, safeShowPicker,
+      tasksCol, taskDoc
+    } from "./app.js";
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import {
-      getFirestore,
-      collection, addDoc, deleteDoc, doc, updateDoc,
+      addDoc, deleteDoc, updateDoc,
       onSnapshot, query, orderBy, serverTimestamp,
       getDocs, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+    const { db, auth, provider } = createFirebaseContext(firebaseConfig);
 
     // DOM
     const taskInput = document.getElementById("taskInput");
@@ -239,6 +237,8 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const userInfo  = document.getElementById("userInfo");
 
+    const setStatus = setStatusFactory(statusEl);
+
     // state
     let currentUid = null;
     let unsubscribe = null;
@@ -253,18 +253,6 @@
     toDate.value = "";
 
     // utils
-    function setStatus(text, isWarn=false) {
-      statusEl.textContent = text;
-      statusEl.className = "small" + (isWarn ? " warn" : "");
-    }
-    function escapeHtml(s) {
-      return String(s ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
     function toDateStr(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -288,7 +276,6 @@
       return toDateStr(s);
     }
 
-    function tasksCol(uid) { return collection(db, "users", uid, "tasks"); }
     function stopListen() { if (unsubscribe) { unsubscribe(); unsubscribe = null; } }
     function needLogin() { setStatus("未ログインです。⚙️からGoogleログインしてね", true); }
 
@@ -304,7 +291,7 @@
       const today = toDateStr(new Date());
       if (due < today) return `<span class="badge overdue clickable" data-badge="1">期限切れ</span>`;
       if (due === today) return `<span class="badge today clickable" data-badge="1">今日</span>`;
-      return `<span class="badge clickable" data-badge="1">期限：${due}</span>`;
+      return `<span class="badge clickable" data-badge="1">期限：${escapeHtml(due)}</span>`;
     }
 
     // Search haystack
@@ -347,7 +334,6 @@
       const today = toDateStr(new Date());
 
       if (v === "all") return true;
-
       if (v === "none") return !due;
 
       // 期限が必要な条件（dueが空ならfalse）
@@ -361,19 +347,18 @@
         return (due >= s && due <= e);
       }
       if (v === "range") {
-        const f = (fromDate.value || "").trim();
-        const t2 = (toDate.value || "").trim();
-        if (!f && !t2) return true; // 何も指定しないなら全部扱い
+        const f = normalize(fromDate.value);
+        const t2 = normalize(toDate.value);
+        if (!f && !t2) return true;
         if (f && due < f) return false;
         if (t2 && due > t2) return false;
         return true;
       }
-
       return true;
     }
 
     function applyFilterAndRender() {
-      const key = (searchKey || "").trim().toLowerCase();
+      const key = normalize(searchKey).toLowerCase();
       const base = sortTasksForUI(allTasks);
 
       const filtered = base
@@ -384,7 +369,6 @@
       renderList(filtered);
     }
 
-    // UI: show/hide range box
     function updateRangeVisibility() {
       const isRange = (dueFilter.value === "range");
       rangeBox.classList.toggle("hidden", !isRange);
@@ -394,7 +378,7 @@
     // Inputs
     function clearInputs() {
       taskInput.value = "";
-      dueInput.value = toDateStr(new Date());
+      dueInput.value = ""; // 期限なしも扱いたいので空にする
       exitEditMode(false);
       taskInput.focus();
       setStatus("入力欄をクリアしました。");
@@ -419,10 +403,10 @@
 
     // Auth
     loginBtn.addEventListener("click", async () => {
-      try { setStatus("ログイン中…"); await signInWithPopup(auth, provider); }
+      try { setStatus("ログイン中…"); await signInGoogle(auth, provider); }
       catch (e) { console.error(e); setStatus(`ログイン失敗: ${e?.code || e?.message}`, true); }
     });
-    logoutBtn.addEventListener("click", async () => { await signOut(auth); });
+    logoutBtn.addEventListener("click", async () => { await signOutGoogle(auth); });
 
     // Filter events
     searchInput.addEventListener("input", () => { searchKey = searchInput.value ?? ""; applyFilterAndRender(); });
@@ -442,8 +426,8 @@
 
     // CRUD
     async function upsertTask(uid) {
-      const title = taskInput.value.trim();
-      const dueDate = (dueInput.value || "").trim(); // "" => none
+      const title = normalize(taskInput.value);
+      const dueDate = normalize(dueInput.value); // "" => none
 
       if (!title) { setStatus("タスク名が空です。", true); taskInput.focus(); return; }
 
@@ -452,11 +436,11 @@
 
       try {
         if (!editingId) {
-          await addDoc(tasksCol(uid), { title, dueDate, completed:false, createdAt: serverTimestamp() });
+          await addDoc(tasksCol(db, uid), { title, dueDate, completed:false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
           taskInput.value = ""; taskInput.focus();
           setStatus("追加しました！");
         } else {
-          await updateDoc(doc(db, "users", uid, "tasks", editingId), { title, dueDate, updatedAt: serverTimestamp() });
+          await updateDoc(taskDoc(db, uid, editingId), { title, dueDate, updatedAt: serverTimestamp() });
           clearInputs();
           setStatus("更新しました！");
         }
@@ -469,18 +453,18 @@
     }
 
     async function toggleDone(uid, id, current) {
-      try { await updateDoc(doc(db, "users", uid, "tasks", id), { completed: !current }); }
+      try { await updateDoc(taskDoc(db, uid, id), { completed: !current, updatedAt: serverTimestamp() }); }
       catch (e) { console.error(e); setStatus(`更新に失敗: ${e?.code || e?.message}`, true); }
     }
 
     async function deleteOne(uid, id) {
-      try { await deleteDoc(doc(db, "users", uid, "tasks", id)); if (editingId === id) exitEditMode(false); }
+      try { await deleteDoc(taskDoc(db, uid, id)); if (editingId === id) exitEditMode(false); }
       catch (e) { console.error(e); setStatus(`削除に失敗: ${e?.code || e?.message}`, true); }
     }
 
     async function updateDueDateInline(uid, id, newDueDate) {
       try {
-        await updateDoc(doc(db, "users", uid, "tasks", id), { dueDate: newDueDate, updatedAt: serverTimestamp() });
+        await updateDoc(taskDoc(db, uid, id), { dueDate: newDueDate, updatedAt: serverTimestamp() });
         setStatus("期限を更新しました！");
       } catch (e) {
         console.error(e);
@@ -491,10 +475,10 @@
     async function deleteDone(uid) {
       setStatus("完了タスクを削除中…");
       try {
-        const snap = await getDocs(query(tasksCol(uid)));
+        const snap = await getDocs(query(tasksCol(db, uid)));
         const batch = writeBatch(db);
         let count = 0;
-        snap.forEach(d => { if (d.data().completed === true) { batch.delete(doc(db, "users", uid, "tasks", d.id)); count++; } });
+        snap.forEach(d => { if (d.data().completed === true) { batch.delete(d.ref); count++; } });
         if (count === 0) { setStatus("完了タスクはありません。"); return; }
         await batch.commit();
         setStatus(`完了タスクを ${count} 件削除しました。`);
@@ -506,12 +490,13 @@
 
     async function deleteAll(uid) {
       if (!confirm("全部削除します。よろしいですか？")) return;
+
       setStatus("全削除中…");
       try {
-        const snap = await getDocs(query(tasksCol(uid)));
+        const snap = await getDocs(query(tasksCol(db, uid)));
         const batch = writeBatch(db);
         let count = 0;
-        snap.forEach(d => { batch.delete(doc(db, "users", uid, "tasks", d.id)); count++; });
+        snap.forEach(d => { batch.delete(d.ref); count++; });
         if (count === 0) { setStatus("削除するデータがありません。"); return; }
         await batch.commit();
         exitEditMode(false);
@@ -586,11 +571,13 @@
             const noneBtn = box.querySelector("[data-none]");
 
             dateEl.addEventListener("change", async () => {
-              const newDue = (dateEl.value || "").trim();
+              const newDue = normalize(dateEl.value); // "" OK
               await updateDueDateInline(currentUid, id, newDue);
             });
 
-            noneBtn.addEventListener("click", async () => { await updateDueDateInline(currentUid, id, ""); });
+            noneBtn.addEventListener("click", async () => {
+              await updateDueDateInline(currentUid, id, "");
+            });
 
             const cancelToBadge = () => { applyFilterAndRender(); };
             dateEl.addEventListener("keydown", (e) => { if (e.key === "Escape") cancelToBadge(); });
@@ -600,7 +587,7 @@
             dueWrap.appendChild(box);
 
             dateEl.focus();
-            try { dateEl.showPicker?.(); } catch(e) {}
+            safeShowPicker(dateEl);
           });
         }
 
@@ -613,7 +600,8 @@
     // listen
     function startListen(uid) {
       stopListen();
-      const q = query(tasksCol(uid), orderBy("createdAt"));
+      // Firestore order: createdAt (UI側で期限ソートしてるのでこれでOK)
+      const q = query(tasksCol(db, uid), orderBy("createdAt"));
       setStatus("同期中…");
       unsubscribe = onSnapshot(q, (snapshot) => {
         allTasks = snapshot.docs.map(d => {
@@ -621,7 +609,7 @@
           return {
             id: d.id,
             title: data.title ?? "",
-            dueDate: (data.dueDate ?? "").toString(),
+            dueDate: String(data.dueDate ?? ""),
             completed: data.completed === true
           };
         });
@@ -643,10 +631,10 @@
 
     reloadBtn.addEventListener("click", () => location.reload());
 
-    // initial range behavior
+    // initial
     updateRangeVisibility();
 
-    onAuthStateChanged(auth, (user) => {
+    onUser(auth, (user) => {
       stopListen();
       listEl.innerHTML = "";
       exitEditMode(false);
