@@ -7,53 +7,74 @@
   <style>
     :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
     body { margin: 0; background:#f7f7fb; color:#111; }
-    .wrap { max-width: 1020px; margin: 20px auto; padding: 0 14px 40px; }
-    h1 { font-size: 30px; margin: 10px 0 14px; display:flex; align-items:center; gap:10px; }
-    h1 span { font-size: 34px; }
-    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    input[type="text"], textarea, select {
-      flex: 1 1 280px; padding:12px 12px; border:1px solid #d7d7e5; border-radius:10px; font-size:16px; background:#fff;
+    .wrap { max-width: 980px; margin: 18px auto; padding: 0 12px 32px; }
+    h1 { font-size: 26px; margin: 8px 0 12px; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 30px; }
+    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+
+    /* compact inputs */
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    input[type="text"], textarea, select{
+      padding:10px 10px; border:1px solid #d7d7e5; border-radius:10px; font-size:14px; background:#fff;
     }
-    textarea { min-height: 120px; resize: vertical; }
-    button{ padding:12px 14px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:16px; cursor:pointer; }
+    textarea{ width:100%; min-height:110px; resize:vertical; }
+    button{
+      padding:10px 12px; border:1px solid #d7d7e5; background:#fff; border-radius:10px; font-size:14px; cursor:pointer;
+      line-height:1;
+    }
     button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
     button.danger{ border-color:#ff4d6d; color:#ff4d6d; }
     button.ghost{ background:#f7f7fb; }
-    .tools { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
     .small{ font-size:12px; color:#777; }
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
 
-    .grid { display:grid; grid-template-columns: 1fr 240px; gap:10px; }
+    /* layout */
+    .grid { display:grid; grid-template-columns: 1fr 180px; gap:10px; }
     @media (max-width: 820px){ .grid{ grid-template-columns: 1fr; } }
 
-    .filterRow { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .filterRow > * { flex: 1 1 220px; }
-    .filterRow .btns { flex: 0 0 auto; display:flex; gap:10px; }
+    .filterGrid{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr 220px 1fr;
+      gap:8px;
+      align-items:center;
+    }
+    @media (max-width: 900px){ .filterGrid{ grid-template-columns: 1fr; } }
 
-    .list { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
-    .item { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; display:flex; gap:12px; align-items:flex-start; }
-    .itemMain { flex: 1; min-width: 0; }
-    .itemTitle { font-size:18px; font-weight:700; margin-bottom:6px; }
-    .itemBody { white-space:pre-wrap; color:#222; line-height:1.5; }
-    .meta { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .pill { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #dde0ff; background:#f0f1ff; color:#3a42c6; user-select:none; }
+    /* tools collapsible */
+    details.box{
+      margin-top:10px;
+      border:1px solid #e6e6ef;
+      border-radius:12px;
+      padding:8px 10px;
+      background:#fafaff;
+    }
+    details.box > summary{
+      cursor:pointer; user-select:none; font-size:13px; color:#444;
+      list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    details.box > summary::-webkit-details-marker{ display:none; }
+    .boxInner{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    /* list */
+    .list{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+    .item{ background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:10px; display:flex; gap:12px; align-items:flex-start; }
+    .itemMain{ flex:1; min-width:0; }
+    .itemTitle{ font-size:16px; font-weight:700; margin-bottom:4px; }
+    .itemBody{ white-space:pre-wrap; color:#222; line-height:1.5; font-size:14px; }
+    .meta{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    .pill{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #dde0ff; background:#f0f1ff; color:#3a42c6; user-select:none; }
     .pill.cat { border-color:#d8f1df; background:#f1fff4; color:#1d7a35; }
     .pill.tag { border-color:#ffe2b5; background:#fff7ea; color:#9a5b00; cursor:pointer; }
     .pill.tag.active { outline: 2px solid rgba(154,91,0,.25); }
-    .btnCol { display:flex; gap:8px; flex-direction:column; }
 
-    .footer{ font-size:13px; color:#666; margin-top:10px; }
+    .btnCol{ display:flex; gap:8px; align-items:center; }
+    .btnCol button{ padding:8px 10px; font-size:13px; }
 
-    .panel {
-      margin-top:10px; border:1px solid #e6e6ef; border-radius:14px; padding:12px; background:#fbfbff;
-    }
-    .panelTitle { font-weight:700; margin-bottom:8px; }
-    .catRow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px; }
-    .catList { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
-    .catItem { display:flex; gap:8px; align-items:center; }
-    .catItem input { flex: 1; }
+    .footer{ font-size:12px; color:#666; margin-top:10px; }
   </style>
 </head>
 
@@ -62,91 +83,102 @@
     <h1><span>🗒️</span> メモ（Firebase）</h1>
 
     <div class="card">
+      <!-- Input -->
       <div class="grid">
         <div>
           <div class="row">
-            <input id="titleInput" type="text" placeholder="タイトル（例：経費精算 / PANETメモ / 連絡事項）" />
+            <input id="titleInput" type="text" placeholder="タイトル（例：PANET / 連絡 / 経費）" style="flex:1 1 360px;" />
           </div>
 
-          <div class="row" style="margin-top:10px;">
-            <textarea id="bodyInput" placeholder="本文（例：12/1 搭乗分の領収書が届いてから経費申請する）"></textarea>
+          <div class="row" style="margin-top:8px;">
+            <textarea id="bodyInput" placeholder="本文"></textarea>
           </div>
 
-          <div class="row" style="margin-top:10px;">
-            <select id="categoryInput">
+          <div class="row" style="margin-top:8px;">
+            <select id="categoryInput" style="flex: 0 0 220px;">
               <option value="">カテゴリ（未設定）</option>
             </select>
+            <input id="tagsInput" type="text" placeholder="タグ（カンマ区切り）例：申請,急ぎ" style="flex:1 1 260px;" />
             <button id="manageCatBtn" class="ghost">カテゴリ管理</button>
-            <input id="tagsInput" type="text" placeholder="タグ（カンマ区切り）例：領収書,申請,急ぎ" />
           </div>
-
-          <div id="catPanel" class="panel hidden">
-            <div class="panelTitle">カテゴリ管理（自分のデータのみ）</div>
-            <div class="catRow">
-              <input id="newCatInput" type="text" placeholder="新しいカテゴリ名（例：経費 / PANET / 連絡）" />
-              <button id="addCatBtn" class="primary">追加</button>
-              <button id="closeCatBtn">閉じる</button>
-            </div>
-            <div class="small">※ 既存カテゴリは「名前変更」「削除」ができます（削除してもメモは消えません）。</div>
-            <div id="catList" class="catList"></div>
-          </div>
-
         </div>
 
         <div class="row" style="justify-content:flex-end; align-items:stretch; flex-direction:column;">
-          <button id="addBtn" class="primary" style="width:100%; height:100%; min-height:90px;">追加</button>
+          <button id="addBtn" class="primary" style="width:100%; min-height:42px;">追加</button>
           <button id="cancelEditBtn" class="hidden" style="width:100%;">編集キャンセル</button>
           <button id="clearInputBtn" class="ghost" style="width:100%;">入力クリア</button>
         </div>
       </div>
 
-      <div class="filterRow">
+      <!-- Filters -->
+      <div class="filterGrid">
         <input id="searchInput" type="text" placeholder="検索（タイトル・本文・タグ・カテゴリ）" />
         <select id="filterCategory">
-          <option value="">カテゴリ絞り込み（すべて）</option>
+          <option value="">カテゴリ：すべて</option>
         </select>
         <input id="filterTags" type="text" placeholder="タグ絞り込み（カンマ区切り）例：申請,急ぎ" />
-        <div class="btns">
-          <button id="clearFilterBtn" class="ghost">絞り込みクリア</button>
-          <button id="reloadBtn">再読み込み</button>
-          <button id="deleteAllBtn" class="danger">全削除</button>
-        </div>
       </div>
 
-      <div class="tools">
-        <button id="loginBtn">Googleでログイン</button>
-        <button id="logoutBtn" class="hidden">ログアウト</button>
-        <span id="userInfo" class="small"></span>
+      <div class="row" style="margin-top:8px;">
+        <button id="clearFilterBtn" class="ghost">絞り込みクリア</button>
+        <button id="reloadBtn">再読み込み</button>
         <span id="status" class="small"></span>
       </div>
+
+      <!-- Category manager (collapsible style but controlled by button) -->
+      <details id="catBox" class="box hidden">
+        <summary>
+          <span>📁 カテゴリ管理</span>
+          <span class="small">（自分のデータのみ）</span>
+        </summary>
+        <div class="boxInner">
+          <input id="newCatInput" type="text" placeholder="新しいカテゴリ名（例：経費 / PANET / 連絡）" />
+          <button id="addCatBtn" class="primary">追加</button>
+          <button id="closeCatBtn">閉じる</button>
+        </div>
+        <div class="small" style="margin-top:6px;">※ 既存カテゴリは「変更」「削除」ができます（削除してもメモは消えません）。</div>
+        <div id="catList" style="margin-top:8px; display:flex; flex-direction:column; gap:8px;"></div>
+      </details>
+
+      <!-- Tools -->
+      <details class="box">
+        <summary>
+          <span>⚙️ ツール / ログイン</span>
+          <span id="userInfo" class="small"></span>
+        </summary>
+        <div class="boxInner">
+          <button id="loginBtn">Googleログイン</button>
+          <button id="logoutBtn" class="hidden">ログアウト</button>
+          <button id="deleteAllBtn" class="danger">全削除</button>
+        </div>
+        <div class="small" style="margin-top:6px;">
+          💡 タグをクリックすると「タグ絞り込み」に追加/解除できます。
+        </div>
+      </details>
 
       <div id="list" class="list"></div>
 
       <div class="footer">
         ※ データは Firebase Firestore に保存されます（自分のデータのみ）。<br/>
-        ※ 検索は画面上の絞り込み（高速）です。タグはクリックでも絞り込みできます。
+        ※ 検索/絞り込みは画面上で高速に実行します。
       </div>
     </div>
   </div>
 
   <script type="module">
     import { firebaseConfig } from "./config.js";
+    import {
+      createFirebaseContext, onUser, signInGoogle, signOutGoogle,
+      setStatusFactory, escapeHtml, normalize, parseTags,
+      memosCol, catsCol, memoDoc, catDoc
+    } from "./app.js";
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
-      onAuthStateChanged, signOut
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import {
-      getFirestore, collection, addDoc, deleteDoc, doc, updateDoc,
-      onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch
+      addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy,
+      serverTimestamp, getDocs, writeBatch
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // init
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+    const { db, auth, provider } = createFirebaseContext(firebaseConfig);
 
     // DOM
     const titleInput = document.getElementById("titleInput");
@@ -159,7 +191,7 @@
     const clearInputBtn = document.getElementById("clearInputBtn");
 
     const manageCatBtn = document.getElementById("manageCatBtn");
-    const catPanel = document.getElementById("catPanel");
+    const catBox = document.getElementById("catBox");
     const newCatInput = document.getElementById("newCatInput");
     const addCatBtn = document.getElementById("addCatBtn");
     const closeCatBtn = document.getElementById("closeCatBtn");
@@ -179,131 +211,91 @@
     const statusEl = document.getElementById("status");
     const listEl = document.getElementById("list");
 
-    function setStatus(text, isWarn=false) {
-      statusEl.textContent = text;
-      statusEl.className = "small" + (isWarn ? " warn" : "");
-    }
-    function escapeHtml(s) {
-      return (s ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-    function normalize(s){ return (s ?? "").toString().trim(); }
-    function parseTags(s){
-      return normalize(s)
-        .split(",")
-        .map(x => x.trim())
-        .filter(Boolean)
-        .slice(0, 30);
-    }
-
-    function memosCol(uid) { return collection(db, "users", uid, "memos"); }
-    function catsCol(uid)  { return collection(db, "users", uid, "categories"); }
+    const setStatus = setStatusFactory(statusEl);
 
     // state
     let currentUser = null;
     let unsubscribeMemos = null;
     let unsubscribeCats = null;
 
-    let allMemos = [];      // {id, title, body, category, tags}
-    let categories = [];    // {id, name}
-    let editingId = null;   // memoId
+    let allMemos = [];    // {id,title,body,category,tags}
+    let categories = [];  // {id,name}
+    let editingId = null;
 
-    // ---------- input clear / filter clear ----------
-    function clearInputs() {
-      titleInput.value = "";
-      bodyInput.value = "";
-      categoryInput.value = "";
-      tagsInput.value = "";
-      setEditMode(null);
-      setStatus("入力欄をクリアしました。");
-      titleInput.focus();
-    }
-
-    function clearFilters() {
-      searchInput.value = "";
-      filterCategory.value = "";
-      filterTags.value = "";
-      applyFilterAndRender();
-      setStatus("絞り込みをクリアしました。");
-    }
-
-    clearInputBtn.addEventListener("click", clearInputs);
-    clearFilterBtn.addEventListener("click", clearFilters);
-
-    // ---------- edit mode ----------
-    function setEditMode(memoOrNull) {
-      if (!memoOrNull) {
+    // --------- UI helpers ----------
+    function setEditMode(m) {
+      if (!m) {
         editingId = null;
         addBtn.textContent = "追加";
         cancelEditBtn.classList.add("hidden");
         return;
       }
-      editingId = memoOrNull.id;
-      titleInput.value = memoOrNull.title ?? "";
-      bodyInput.value = memoOrNull.body ?? "";
-      categoryInput.value = memoOrNull.category ?? "";
-      tagsInput.value = (memoOrNull.tags ?? []).join(",");
+      editingId = m.id;
+      titleInput.value = m.title ?? "";
+      bodyInput.value = m.body ?? "";
+      categoryInput.value = m.category ?? "";
+      tagsInput.value = (m.tags ?? []).join(",");
       addBtn.textContent = "更新";
       cancelEditBtn.classList.remove("hidden");
       titleInput.focus();
       setStatus("編集中：更新ボタンで保存できます。");
     }
 
-    cancelEditBtn.addEventListener("click", () => {
-      clearInputs();
-      setStatus("編集をキャンセルしました。");
-    });
+    function clearInputs(msg=true) {
+      titleInput.value = "";
+      bodyInput.value = "";
+      categoryInput.value = "";
+      tagsInput.value = "";
+      setEditMode(null);
+      if (msg) setStatus("入力欄をクリアしました。");
+      titleInput.focus();
+    }
 
-    // ---------- category render ----------
+    function clearFilters(msg=true) {
+      searchInput.value = "";
+      filterCategory.value = "";
+      filterTags.value = "";
+      applyFilterAndRender();
+      if (msg) setStatus("絞り込みをクリアしました。");
+    }
+
+    // --------- category ----------
     function renderCategorySelects() {
-      const build = (selectEl, includeAllOption=false) => {
-        const cur = selectEl.value;
-        selectEl.innerHTML = "";
+      const cur1 = categoryInput.value;
+      const cur2 = filterCategory.value;
 
-        if (includeAllOption) {
-          const optAll = document.createElement("option");
-          optAll.value = "";
-          optAll.textContent = "カテゴリ絞り込み（すべて）";
-          selectEl.appendChild(optAll);
-        } else {
-          const optNone = document.createElement("option");
-          optNone.value = "";
-          optNone.textContent = "カテゴリ（未設定）";
-          selectEl.appendChild(optNone);
-        }
+      categoryInput.innerHTML = `<option value="">カテゴリ（未設定）</option>`;
+      filterCategory.innerHTML = `<option value="">カテゴリ：すべて</option>`;
 
-        for (const c of categories) {
-          const opt = document.createElement("option");
-          opt.value = c.name;
-          opt.textContent = c.name;
-          selectEl.appendChild(opt);
-        }
+      for (const c of categories) {
+        const o1 = document.createElement("option");
+        o1.value = c.name; o1.textContent = c.name;
+        categoryInput.appendChild(o1);
 
-        const exists = Array.from(selectEl.options).some(o => o.value === cur);
-        selectEl.value = exists ? cur : "";
-      };
+        const o2 = document.createElement("option");
+        o2.value = c.name; o2.textContent = c.name;
+        filterCategory.appendChild(o2);
+      }
 
-      build(categoryInput, false);
-      build(filterCategory, true);
+      categoryInput.value = Array.from(categoryInput.options).some(o => o.value === cur1) ? cur1 : "";
+      filterCategory.value = Array.from(filterCategory.options).some(o => o.value === cur2) ? cur2 : "";
     }
 
     function renderCategoryPanel() {
       catListEl.innerHTML = "";
       if (categories.length === 0) {
-        const div = document.createElement("div");
-        div.className = "small";
-        div.textContent = "カテゴリはまだありません。追加してください。";
-        catListEl.appendChild(div);
+        const d = document.createElement("div");
+        d.className = "small";
+        d.textContent = "カテゴリはまだありません。追加してください。";
+        catListEl.appendChild(d);
         return;
       }
 
       for (const c of categories) {
         const row = document.createElement("div");
-        row.className = "catItem";
+        row.style.display = "flex";
+        row.style.gap = "8px";
+        row.style.alignItems = "center";
         row.innerHTML = `
           <input type="text" value="${escapeHtml(c.name)}" />
           <button data-rename="1">変更</button>
@@ -314,13 +306,12 @@
         row.querySelector("[data-rename]").addEventListener("click", async () => {
           if (!currentUser) return;
           const newName = normalize(inp.value);
-          if (!newName) { setStatus("カテゴリ名が空です。", true); return; }
-
+          if (!newName) return setStatus("カテゴリ名が空です。", true);
           const dup = categories.some(x => x.name === newName && x.id !== c.id);
-          if (dup) { setStatus("同名カテゴリが既にあります。", true); return; }
+          if (dup) return setStatus("同名カテゴリが既にあります。", true);
 
           try {
-            await updateDoc(doc(db, "users", currentUser.uid, "categories", c.id), { name: newName });
+            await updateDoc(catDoc(db, currentUser.uid, c.id), { name: newName });
             setStatus("カテゴリ名を変更しました。");
           } catch (e) {
             console.error(e);
@@ -331,8 +322,9 @@
         row.querySelector("[data-del]").addEventListener("click", async () => {
           if (!currentUser) return;
           if (!confirm(`カテゴリ「${c.name}」を削除します。よろしいですか？`)) return;
+
           try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "categories", c.id));
+            await deleteDoc(catDoc(db, currentUser.uid, c.id));
             setStatus("カテゴリを削除しました。");
           } catch (e) {
             console.error(e);
@@ -344,18 +336,21 @@
       }
     }
 
-    manageCatBtn.addEventListener("click", () => catPanel.classList.toggle("hidden"));
-    closeCatBtn.addEventListener("click", () => catPanel.classList.add("hidden"));
+    manageCatBtn.addEventListener("click", () => {
+      catBox.classList.toggle("hidden");
+      if (!catBox.classList.contains("hidden")) catBox.open = true;
+    });
+    closeCatBtn.addEventListener("click", () => catBox.classList.add("hidden"));
 
     addCatBtn.addEventListener("click", async () => {
-      if (!currentUser) { setStatus("未ログインです。", true); return; }
+      if (!currentUser) return setStatus("未ログインです。", true);
       const name = normalize(newCatInput.value);
-      if (!name) { setStatus("カテゴリ名が空です。", true); return; }
+      if (!name) return setStatus("カテゴリ名が空です。", true);
       const dup = categories.some(c => c.name === name);
-      if (dup) { setStatus("同名カテゴリが既にあります。", true); return; }
+      if (dup) return setStatus("同名カテゴリが既にあります。", true);
 
       try {
-        await addDoc(catsCol(currentUser.uid), { name, createdAt: serverTimestamp() });
+        await addDoc(catsCol(db, currentUser.uid), { name, createdAt: serverTimestamp() });
         newCatInput.value = "";
         setStatus("カテゴリを追加しました。");
       } catch (e) {
@@ -364,7 +359,7 @@
       }
     });
 
-    // ---------- memo filter + render ----------
+    // --------- memo filter + render ----------
     function applyFilterAndRender() {
       const q = normalize(searchInput.value).toLowerCase();
       const cat = normalize(filterCategory.value);
@@ -374,7 +369,7 @@
         if (cat && (m.category ?? "") !== cat) return false;
 
         if (needTags.length > 0) {
-          const mtags = (m.tags ?? []).map(t => (t ?? "").toLowerCase());
+          const mtags = (m.tags ?? []).map(t => String(t ?? "").toLowerCase());
           for (const t of needTags) if (!mtags.includes(t)) return false;
         }
 
@@ -398,9 +393,9 @@
         const el = document.createElement("div");
         el.className = "item";
 
-        const catPill = m.category ? `<span class="pill cat">カテゴリ：${escapeHtml(m.category)}</span>` : "";
+        const catPill = m.category ? `<span class="pill cat">📁 ${escapeHtml(m.category)}</span>` : `<span class="pill">📁 未設定</span>`;
         const tagPills = (m.tags ?? []).map(t => {
-          const low = (t ?? "").toLowerCase();
+          const low = String(t ?? "").toLowerCase();
           const active = needTags.includes(low);
           return `<span class="pill tag ${active ? "active" : ""}" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`;
         }).join("");
@@ -417,18 +412,17 @@
           </div>
         `;
 
-        // タグクリック → filterTags にトグル
+        // tag click -> toggle into filterTags
         el.querySelectorAll("[data-tag]").forEach(tagEl => {
           tagEl.addEventListener("click", () => {
             const tag = normalize(tagEl.getAttribute("data-tag"));
             if (!tag) return;
 
-            const current = parseTags(filterTags.value);
-            const exists = current.some(x => x.toLowerCase() === tag.toLowerCase());
-
+            const cur = parseTags(filterTags.value);
+            const exists = cur.some(x => x.toLowerCase() === tag.toLowerCase());
             const next = exists
-              ? current.filter(x => x.toLowerCase() !== tag.toLowerCase())
-              : [...current, tag];
+              ? cur.filter(x => x.toLowerCase() !== tag.toLowerCase())
+              : [...cur, tag];
 
             filterTags.value = next.join(",");
             applyFilterAndRender();
@@ -441,7 +435,7 @@
           if (!currentUser) return;
           if (!confirm("このメモを削除します。よろしいですか？")) return;
           try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "memos", m.id));
+            await deleteDoc(memoDoc(db, currentUser.uid, m.id));
             if (editingId === m.id) setEditMode(null);
           } catch (e) {
             console.error(e);
@@ -459,46 +453,40 @@
     filterCategory.addEventListener("change", applyFilterAndRender);
     filterTags.addEventListener("input", applyFilterAndRender);
 
-    // ---------- add / update ----------
+    // --------- add / update ----------
     async function upsertMemo() {
-      if (!currentUser) {
-        setStatus("未ログインです。Googleでログインしてください。", true);
-        return;
-      }
+      if (!currentUser) return setStatus("未ログインです。Googleログインしてね。", true);
 
       const title = normalize(titleInput.value);
-      const body = normalize(bodyInput.value);
+      const body  = normalize(bodyInput.value);
       const category = normalize(categoryInput.value);
       const tags = parseTags(tagsInput.value);
 
-      if (!title && !body) {
-        setStatus("タイトルか本文どちらかは入力してね。", true);
-        return;
-      }
+      if (!title && !body) return setStatus("タイトルか本文どちらかは入力してね。", true);
 
       addBtn.disabled = true;
       setStatus(editingId ? "更新中…" : "追加中…");
 
       try {
         if (!editingId) {
-          await addDoc(memosCol(currentUser.uid), {
+          await addDoc(memosCol(db, currentUser.uid), {
             title, body, category, tags,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
-          clearInputs();
+          clearInputs(false);
           setStatus("追加しました！");
         } else {
-          await updateDoc(doc(db, "users", currentUser.uid, "memos", editingId), {
+          await updateDoc(memoDoc(db, currentUser.uid, editingId), {
             title, body, category, tags,
             updatedAt: serverTimestamp()
           });
+          clearInputs(false);
           setStatus("更新しました！");
-          clearInputs();
         }
       } catch (e) {
         console.error(e);
-        setStatus("追加/更新に失敗しました（Firestoreルール/権限）。", true);
+        setStatus(`追加/更新に失敗: ${e?.code || e?.message}`, true);
       } finally {
         addBtn.disabled = false;
       }
@@ -506,45 +494,56 @@
 
     addBtn.addEventListener("click", upsertMemo);
 
-    // ---------- delete all ----------
-    async function deleteAll() {
+    cancelEditBtn.addEventListener("click", () => {
+      clearInputs(false);
+      setStatus("編集をキャンセルしました。");
+    });
+
+    clearInputBtn.addEventListener("click", () => clearInputs(true));
+    clearFilterBtn.addEventListener("click", () => clearFilters(true));
+    reloadBtn.addEventListener("click", () => location.reload());
+
+    // --------- delete all ----------
+    async function deleteAllMemos() {
       if (!currentUser) return;
       if (!confirm("このユーザーのメモを全削除します。よろしいですか？")) return;
 
       setStatus("全削除中…");
       try {
-        const snap = await getDocs(query(memosCol(currentUser.uid)));
+        const snap = await getDocs(query(memosCol(db, currentUser.uid)));
         const batch = writeBatch(db);
         let count = 0;
         snap.forEach(d => { batch.delete(d.ref); count++; });
 
-        if (count === 0) { setStatus("削除するデータがありません。"); return; }
+        if (count === 0) return setStatus("削除するデータがありません。");
 
         await batch.commit();
+        clearInputs(false);
         setStatus(`全削除しました（${count}件）`);
-        clearInputs();
       } catch (e) {
         console.error(e);
-        setStatus("全削除に失敗しました。", true);
+        setStatus(`全削除に失敗: ${e?.code || e?.message}`, true);
       }
     }
-    deleteAllBtn.addEventListener("click", deleteAll);
+    deleteAllBtn.addEventListener("click", deleteAllMemos);
 
-    reloadBtn.addEventListener("click", () => location.reload());
-
-    // ---------- auth ----------
+    // --------- auth ----------
     loginBtn.addEventListener("click", async () => {
-      setStatus("ログイン中…");
-      await signInWithRedirect(auth, provider);
+      try {
+        setStatus("ログイン中…");
+        await signInGoogle(auth, provider);
+      } catch (e) {
+        console.error(e);
+        setStatus(`ログイン失敗: ${e?.code || e?.message}`, true);
+      }
     });
+
     logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
+      await signOutGoogle(auth);
     });
 
-    // ---------- subscribe ----------
-    onAuthStateChanged(auth, async (user) => {
-      try { await getRedirectResult(auth); } catch (e) {}
-
+    // --------- subscribe ----------
+    onUser(auth, (user) => {
       currentUser = user;
 
       if (unsubscribeMemos) { unsubscribeMemos(); unsubscribeMemos = null; }
@@ -555,14 +554,14 @@
       listEl.innerHTML = "";
       renderCategorySelects();
       renderCategoryPanel();
-      clearFilters();
-      clearInputs();
+      clearFilters(false);
+      clearInputs(false);
 
       if (!user) {
         loginBtn.classList.remove("hidden");
         logoutBtn.classList.add("hidden");
         userInfo.textContent = "";
-        setStatus("未ログインです。Googleでログインしてください。", true);
+        setStatus("未ログインです。⚙️からGoogleログインしてね", true);
         return;
       }
 
@@ -571,9 +570,10 @@
       userInfo.textContent = `ログイン中：${user.displayName ?? ""}`;
 
       // categories
-      const qc = query(catsCol(user.uid), orderBy("name"));
-      unsubscribeCats = onSnapshot(qc, (snap) => {
-        categories = snap.docs.map(d => ({ id: d.id, name: (d.data()?.name ?? "").toString() })).filter(c => c.name);
+      unsubscribeCats = onSnapshot(query(catsCol(db, user.uid), orderBy("name")), (snap) => {
+        categories = snap.docs
+          .map(d => ({ id: d.id, name: String(d.data()?.name ?? "") }))
+          .filter(c => c.name);
         renderCategorySelects();
         renderCategoryPanel();
         applyFilterAndRender();
@@ -583,9 +583,8 @@
       });
 
       // memos
-      const qm = query(memosCol(user.uid), orderBy("createdAt", "desc"));
       setStatus("同期中…");
-      unsubscribeMemos = onSnapshot(qm, (snap) => {
+      unsubscribeMemos = onSnapshot(query(memosCol(db, user.uid), orderBy("createdAt", "desc")), (snap) => {
         allMemos = snap.docs.map(d => {
           const data = d.data() || {};
           return {
