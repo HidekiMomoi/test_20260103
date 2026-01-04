@@ -12,15 +12,16 @@
     h1 span { font-size: 30px; }
     .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
 
-    /* コンパクトUI */
+    /* Compact */
     .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    input[type="text"]{
-      flex: 1 1 260px;
+    input[type="text"], select{
       padding:10px 10px;
       border:1px solid #d7d7e5;
       border-radius:10px;
       font-size:14px;
+      background:#fff;
     }
+    input[type="text"]{ flex: 1 1 260px; }
     input[type="date"]{
       padding:10px 10px;
       border:1px solid #d7d7e5;
@@ -44,18 +45,28 @@
     .warn{ color:#b34b00; }
     .hidden{ display:none; }
 
-    /* 検索は1行で収める */
-    .filterRow{
+    /* Filter */
+    .filterGrid{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr 160px 200px;
+      gap:8px;
+      align-items:center;
+    }
+    @media (max-width: 820px){
+      .filterGrid{ grid-template-columns: 1fr; }
+    }
+    .rangeRow{
       margin-top:8px;
       display:flex;
       gap:8px;
-      align-items:center;
       flex-wrap:wrap;
+      align-items:center;
     }
-    #searchInput{ flex: 1 1 320px; }
-    .filterBtns{ display:flex; gap:8px; flex: 0 0 auto; }
+    .rangeRow input[type="date"]{ padding:8px 8px; font-size:13px; }
+    .rangeRow .hint{ font-size:12px; color:#777; }
 
-    /* 折りたたみ */
+    /* Collapsible tools */
     details.toolsBox{
       margin-top:10px;
       border:1px solid #e6e6ef;
@@ -83,7 +94,7 @@
       align-items:center;
     }
 
-    /* リスト */
+    /* List */
     ul{ list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:10px; }
     li{ background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:10px; display:flex; align-items:center; gap:10px; }
     .taskMain{ flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
@@ -115,7 +126,7 @@
     <h1><span>✅</span> タスク（Firebase）</h1>
 
     <div class="card">
-      <!-- 追加/更新 -->
+      <!-- Add/Update -->
       <div class="row">
         <input id="taskInput" type="text" placeholder="例：Firebase勉強 15分 / 買い物 / メール返す" />
         <input id="dueInput" type="date" />
@@ -124,16 +135,40 @@
         <button id="clearInputBtn" class="ghost">クリア</button>
       </div>
 
-      <!-- 検索 -->
-      <div class="filterRow">
-        <input id="searchInput" type="text" placeholder="検索：買い物 / 2026-01-10 / 完了 / 今日 / 期限切れ / 未完了" />
-        <div class="filterBtns">
-          <button id="clearSearchBtn" class="ghost">検索クリア</button>
-          <button id="reloadBtn">再読込</button>
-        </div>
+      <!-- Filters -->
+      <div class="filterGrid">
+        <input id="searchInput" type="text" placeholder="検索（タイトル/期限/今日/期限切れ/完了/未完了 など）" />
+
+        <select id="statusFilter" title="状態">
+          <option value="all">状態：全部</option>
+          <option value="todo">状態：未完了</option>
+          <option value="done">状態：完了</option>
+        </select>
+
+        <select id="dueFilter" title="期限">
+          <option value="all">期限：全部</option>
+          <option value="none">期限：なし</option>
+          <option value="today">期限：今日</option>
+          <option value="thisweek">期限：今週</option>
+          <option value="overdue">期限：期限切れ</option>
+          <option value="range">期限：期間指定</option>
+        </select>
       </div>
 
-      <!-- ツールは折りたたみ（普段は閉じる） -->
+      <div id="rangeBox" class="rangeRow hidden">
+        <input id="fromDate" type="date" />
+        <span class="hint">〜</span>
+        <input id="toDate" type="date" />
+        <button id="clearRangeBtn" class="ghost">期間クリア</button>
+        <span class="hint">※ from/to はどちらか片方でもOK</span>
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <button id="clearSearchBtn" class="ghost">検索クリア</button>
+        <button id="reloadBtn">再読込</button>
+      </div>
+
+      <!-- Tools -->
       <details class="toolsBox">
         <summary>
           <span>⚙️ ツール / ログイン</span>
@@ -175,6 +210,7 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // DOM
     const taskInput = document.getElementById("taskInput");
     const dueInput  = document.getElementById("dueInput");
     const addBtn    = document.getElementById("addBtn");
@@ -183,6 +219,14 @@
 
     const searchInput = document.getElementById("searchInput");
     const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+    const statusFilter = document.getElementById("statusFilter");
+    const dueFilter = document.getElementById("dueFilter");
+
+    const rangeBox = document.getElementById("rangeBox");
+    const fromDate = document.getElementById("fromDate");
+    const toDate   = document.getElementById("toDate");
+    const clearRangeBtn = document.getElementById("clearRangeBtn");
 
     const deleteDoneBtn = document.getElementById("deleteDoneBtn");
     const deleteAllBtn  = document.getElementById("deleteAllBtn");
@@ -195,15 +239,20 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const userInfo  = document.getElementById("userInfo");
 
+    // state
     let currentUid = null;
     let unsubscribe = null;
 
     let editingId = null;
-    let allTasks = [];
+    let allTasks = [];     // {id,title,dueDate,completed}
     let searchKey = "";
 
+    // init dates
     dueInput.value = toDateStr(new Date());
+    fromDate.value = "";
+    toDate.value = "";
 
+    // utils
     function setStatus(text, isWarn=false) {
       statusEl.textContent = text;
       statusEl.className = "small" + (isWarn ? " warn" : "");
@@ -222,6 +271,23 @@
       const day = String(d.getDate()).padStart(2, "0");
       return `${y}-${m}-${day}`;
     }
+    function startOfWeekISO(d=new Date()) {
+      const x = new Date(d);
+      const day = x.getDay(); // 0=Sun
+      const diff = (day === 0 ? -6 : 1 - day); // Mon start
+      x.setDate(x.getDate() + diff);
+      x.setHours(0,0,0,0);
+      return toDateStr(x);
+    }
+    function endOfWeekISO(d=new Date()) {
+      const s = new Date(d);
+      const day = s.getDay();
+      const diff = (day === 0 ? 0 : 7 - day);
+      s.setDate(s.getDate() + diff);
+      s.setHours(0,0,0,0);
+      return toDateStr(s);
+    }
+
     function tasksCol(uid) { return collection(db, "users", uid, "tasks"); }
     function stopListen() { if (unsubscribe) { unsubscribe(); unsubscribe = null; } }
     function needLogin() { setStatus("未ログインです。⚙️からGoogleログインしてね", true); }
@@ -241,6 +307,7 @@
       return `<span class="badge clickable" data-badge="1">期限：${due}</span>`;
     }
 
+    // Search haystack
     function buildSearchHaystack(t) {
       const title = (t.title ?? "");
       const due = (t.dueDate ?? "");
@@ -249,6 +316,7 @@
       return `${title}\n${due}\n${state}\n${dueText}`.toLowerCase();
     }
 
+    // UI sort: due exists first, due asc, then none
     function sortTasksForUI(arr) {
       return arr.slice().sort((a, b) => {
         const ad = a.dueDate || "";
@@ -264,13 +332,66 @@
       });
     }
 
+    // Filtering
+    function passStatusFilter(t) {
+      const v = statusFilter.value;
+      if (v === "all") return true;
+      if (v === "todo") return t.completed !== true;
+      if (v === "done") return t.completed === true;
+      return true;
+    }
+
+    function passDueFilter(t) {
+      const v = dueFilter.value;
+      const due = (t.dueDate ?? "");
+      const today = toDateStr(new Date());
+
+      if (v === "all") return true;
+
+      if (v === "none") return !due;
+
+      // 期限が必要な条件（dueが空ならfalse）
+      if (!due) return false;
+
+      if (v === "today") return due === today;
+      if (v === "overdue") return due < today;
+      if (v === "thisweek") {
+        const s = startOfWeekISO(new Date());
+        const e = endOfWeekISO(new Date());
+        return (due >= s && due <= e);
+      }
+      if (v === "range") {
+        const f = (fromDate.value || "").trim();
+        const t2 = (toDate.value || "").trim();
+        if (!f && !t2) return true; // 何も指定しないなら全部扱い
+        if (f && due < f) return false;
+        if (t2 && due > t2) return false;
+        return true;
+      }
+
+      return true;
+    }
+
     function applyFilterAndRender() {
       const key = (searchKey || "").trim().toLowerCase();
       const base = sortTasksForUI(allTasks);
-      const filtered = !key ? base : base.filter(t => buildSearchHaystack(t).includes(key));
+
+      const filtered = base
+        .filter(passStatusFilter)
+        .filter(passDueFilter)
+        .filter(t => !key ? true : buildSearchHaystack(t).includes(key));
+
       renderList(filtered);
     }
 
+    // UI: show/hide range box
+    function updateRangeVisibility() {
+      const isRange = (dueFilter.value === "range");
+      rangeBox.classList.toggle("hidden", !isRange);
+      applyFilterAndRender();
+    }
+
+    // Inputs
     function clearInputs() {
       taskInput.value = "";
       dueInput.value = toDateStr(new Date());
@@ -296,20 +417,33 @@
       if (showStatus) setStatus("編集をキャンセルしました。");
     }
 
+    // Auth
     loginBtn.addEventListener("click", async () => {
       try { setStatus("ログイン中…"); await signInWithPopup(auth, provider); }
       catch (e) { console.error(e); setStatus(`ログイン失敗: ${e?.code || e?.message}`, true); }
     });
     logoutBtn.addEventListener("click", async () => { await signOut(auth); });
 
+    // Filter events
     searchInput.addEventListener("input", () => { searchKey = searchInput.value ?? ""; applyFilterAndRender(); });
     clearSearchBtn.addEventListener("click", () => {
       searchInput.value = ""; searchKey = ""; applyFilterAndRender(); setStatus("検索をクリアしました。");
     });
 
+    statusFilter.addEventListener("change", applyFilterAndRender);
+    dueFilter.addEventListener("change", updateRangeVisibility);
+    fromDate.addEventListener("change", applyFilterAndRender);
+    toDate.addEventListener("change", applyFilterAndRender);
+    clearRangeBtn.addEventListener("click", () => {
+      fromDate.value = ""; toDate.value = "";
+      applyFilterAndRender();
+      setStatus("期間指定をクリアしました。");
+    });
+
+    // CRUD
     async function upsertTask(uid) {
       const title = taskInput.value.trim();
-      const dueDate = (dueInput.value || "").trim();
+      const dueDate = (dueInput.value || "").trim(); // "" => none
 
       if (!title) { setStatus("タスク名が空です。", true); taskInput.focus(); return; }
 
@@ -389,17 +523,17 @@
       }
     }
 
+    // render
     function renderList(tasks) {
       listEl.innerHTML = "";
       if (!currentUid) { needLogin(); return; }
 
       if (tasks.length === 0) {
-        setStatus(allTasks.length === 0 ? "タスクはまだありません。" : "該当なし（検索条件を見直してね）");
+        setStatus(allTasks.length === 0 ? "タスクはまだありません。" : "該当なし（フィルタ/検索を見直してね）");
         return;
       }
 
       let doneCount = 0;
-
       tasks.forEach((t) => {
         if (t.completed) doneCount++;
 
@@ -430,6 +564,7 @@
         li.querySelector("[data-del]").addEventListener("click", () => deleteOne(currentUid, id));
         li.querySelector("[data-edit]").addEventListener("click", () => enterEditMode(t));
 
+        // due inline edit (auto save)
         const badge = li.querySelector("[data-badge]");
         const dueWrap = li.querySelector(".dueWrap");
 
@@ -450,18 +585,14 @@
             const dateEl = box.querySelector("input");
             const noneBtn = box.querySelector("[data-none]");
 
-            // 変更した瞬間に自動保存
             dateEl.addEventListener("change", async () => {
               const newDue = (dateEl.value || "").trim();
               await updateDueDateInline(currentUid, id, newDue);
             });
 
-            noneBtn.addEventListener("click", async () => {
-              await updateDueDateInline(currentUid, id, "");
-            });
+            noneBtn.addEventListener("click", async () => { await updateDueDateInline(currentUid, id, ""); });
 
             const cancelToBadge = () => { applyFilterAndRender(); };
-
             dateEl.addEventListener("keydown", (e) => { if (e.key === "Escape") cancelToBadge(); });
             dateEl.addEventListener("blur", () => setTimeout(cancelToBadge, 120));
 
@@ -479,11 +610,10 @@
       setStatus(`表示中：${tasks.length}件（全 ${allTasks.length}件 / 完了 ${doneCount}）`);
     }
 
+    // listen
     function startListen(uid) {
       stopListen();
-
       const q = query(tasksCol(uid), orderBy("createdAt"));
-
       setStatus("同期中…");
       unsubscribe = onSnapshot(q, (snapshot) => {
         allTasks = snapshot.docs.map(d => {
@@ -502,6 +632,7 @@
       });
     }
 
+    // events
     addBtn.addEventListener("click", () => { if (!currentUid) return needLogin(); upsertTask(currentUid); });
     taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { if (!currentUid) return needLogin(); upsertTask(currentUid); } });
     cancelEditBtn.addEventListener("click", () => exitEditMode(true));
@@ -511,6 +642,9 @@
     deleteAllBtn.addEventListener("click", () => { if (!currentUid) return needLogin(); deleteAll(currentUid); });
 
     reloadBtn.addEventListener("click", () => location.reload());
+
+    // initial range behavior
+    updateRangeVisibility();
 
     onAuthStateChanged(auth, (user) => {
       stopListen();
