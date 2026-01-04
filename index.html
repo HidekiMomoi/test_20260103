@@ -1,22 +1,55 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>GitHub Pages テスト</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ホーム（Firebase）</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
+    body { margin:0; background:#f7f7fb; color:#111; }
+    .wrap { max-width: 780px; margin: 18px auto; padding: 0 12px 32px; }
+    h1 { font-size: 26px; margin: 8px 0 12px; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 30px; }
+    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:14px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px; }
+    @media (max-width: 700px){ .grid{ grid-template-columns: 1fr; } }
+    a.box {
+      display:flex; flex-direction:column; gap:6px;
+      text-decoration:none; color:inherit;
+      border:1px solid #e6e6ef; border-radius:14px; padding:14px;
+      background:#fafaff;
+      transition: transform .05s ease;
+    }
+    a.box:active { transform: scale(0.99); }
+    .title { font-size:18px; font-weight:700; }
+    .desc { font-size:13px; color:#666; line-height:1.5; }
+    .pill { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #dde0ff; background:#f0f1ff; color:#3a42c6; width:max-content; }
+    .footer { margin-top:12px; font-size:12px; color:#777; }
+  </style>
 </head>
 <body>
-  <h1>🚀 やっと編集できた！</h1>
-  <p>ここがWebページに表示されます。</p>
-<button onclick="alert('ボタン押された！')">
-  クリックしてみて
-</button>
-  <input id="name" placeholder="名前を入力">
-<button onclick="show()">表示</button>
+  <div class="wrap">
+    <h1><span>🏠</span> ホーム（Firebase）</h1>
 
-<script>
-function show() {
-  alert(document.getElementById('name').value);
-}
-</script>
+    <div class="card">
+      <div class="grid">
+        <a class="box" href="./task.html">
+          <div class="pill">Task</div>
+          <div class="title">タスク</div>
+          <div class="desc">期限あり/なし・完了/未完了・検索・絞り込み・編集（自動保存）</div>
+        </a>
+
+        <a class="box" href="./memo.html">
+          <div class="pill">Memo</div>
+          <div class="title">メモ</div>
+          <div class="desc">カテゴリ/タグ・検索・絞り込み・編集・入力クリア</div>
+        </a>
+      </div>
+
+      <div class="footer">
+        ※ 同じフォルダに <b>config.js / app.js / task.html / memo.html</b> がある前提です。
+      </div>
+    </div>
+  </div>
 </body>
 </html>
