@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR作成</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; }
+    body { margin:0; background:#f7f7fb; color:#111; }
+    .wrap { max-width: 980px; margin: 18px auto; padding: 0 12px 32px; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 8px 0 12px; }
+    h1 { font-size: 26px; margin:0; display:flex; align-items:center; gap:10px; }
+    h1 span { font-size: 30px; }
+    .nav{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .nav a{
+      text-decoration:none; color:#2d6cdf; font-size:13px;
+      border:1px solid #d7d7e5; padding:8px 10px; border-radius:10px; background:#fff;
+      display:inline-flex; align-items:center; gap:6px;
+    }
+
+    .card { background:#fff; border:1px solid #e6e6ef; border-radius:14px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    textarea, select, input[type="number"], input[type="text"]{
+      padding:10px 10px;
+      border:1px solid #d7d7e5;
+      border-radius:10px;
+      font-size:14px;
+      background:#fff;
+      box-sizing:border-box;
+    }
+    textarea{ width:100%; min-height:120px; resize:vertical; line-height:1.5; }
+    select, input[type="number"], input[type="text"]{ width: 220px; }
+    .grow{ flex: 1 1 260px; }
+    button{
+      padding:9px 12px;
+      border:1px solid #d7d7e5;
+      background:#fff;
+      border-radius:10px;
+      font-size:14px;
+      cursor:pointer;
+      line-height:1;
+      white-space:nowrap;
+    }
+    button.primary{ background:#2d6cdf; color:#fff; border-color:#2d6cdf; }
+    button.ghost{ background:#f7f7fb; }
+    .small{ font-size:12px; color:#777; }
+    .warn{ color:#b34b00; }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap:12px;
+      margin-top:10px;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      .grid2{ grid-template-columns: 1fr; }
+      select, input[type="number"], input[type="text"]{ width: 100%; }
+    }
+
+    .qrBox{
+      border:1px solid #e6e6ef;
+      border-radius:14px;
+      padding:12px;
+      background:#fafaff;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      min-height: 320px;
+    }
+    canvas{ background:#fff; border-radius:12px; border:1px solid #eef0f7; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#444; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1><span>🔳</span> QR作成</h1>
+      <div class="nav">
+        <a href="./index.html">🏠 ホーム</a>
+        <a href="./memo.html">🗒️ メモへ</a>
+        <a href="./task.html">✅ タスクへ</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grid2">
+        <!-- Left: input -->
+        <div>
+          <textarea id="textInput" placeholder="ここにQRにしたい文字を入力"></textarea>
+
+          <div class="row" style="margin-top:10px;">
+            <select id="encodingSelect" title="エンコード">
+              <option value="utf8">UTF-8（推奨）</option>
+              <option value="sjis">Shift_JIS（端末/設備向け）</option>
+            </select>
+
+            <select id="eccSelect" title="誤り訂正レベル">
+              <option value="L">ECC L（7%）</option>
+              <option value="M" selected>ECC M（15%）</option>
+              <option value="Q">ECC Q（25%）</option>
+              <option value="H">ECC H（30%）</option>
+            </select>
+
+            <input id="sizeInput" type="number" min="120" max="800" step="10" value="260" title="サイズ(px)" />
+            <input id="marginInput" type="number" min="0" max="10" step="1" value="2" title="余白(モジュール数)" />
+
+            <button id="genBtn" class="primary">生成</button>
+            <button id="clearBtn" class="ghost">クリア</button>
+          </div>
+
+          <div class="row" style="margin-top:8px;">
+            <button id="copyBtn">内容をコピー</button>
+            <button id="downloadBtn">PNG保存</button>
+            <span id="status" class="small"></span>
+          </div>
+
+          <div class="small" style="margin-top:8px;">
+            ・Shift_JIS は日本語QR対応端末向け（機種によってはUTF-8必須の場合あり）<br/>
+            ・長文＋高ECCだと入り切らないことがあります（その場合はECCを下げる/短くする）<br/>
+          </div>
+        </div>
+
+        <!-- Right: QR preview -->
+        <div class="qrBox">
+          <canvas id="qrCanvas" width="260" height="260" aria-label="QRコード"></canvas>
+          <div class="mono" id="metaInfo">未生成</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR生成ライブラリ（QRCode.js / Kazuhiko Arase） -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <!-- Shift_JIS 変換用（encoding-japanese） -->
+  <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@2.0.0/encoding.min.js"></script>
+
+  <script>
+    const textInput = document.getElementById("textInput");
+    const encodingSelect = document.getElementById("encodingSelect");
+    const eccSelect = document.getElementById("eccSelect");
+    const sizeInput = document.getElementById("sizeInput");
+    const marginInput = document.getElementById("marginInput");
+
+    const genBtn = document.getElementById("genBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const canvas = document.getElementById("qrCanvas");
+    const statusEl = document.getElementById("status");
+    const metaInfo = document.getElementById("metaInfo");
+
+    function setStatus(text, warn=false){
+      statusEl.textContent = text;
+      statusEl.className = "small" + (warn ? " warn" : "");
+    }
+
+    function clamp(n, min, max){
+      n = Number(n);
+      if (Number.isNaN(n)) return min;
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function toSJISBytes(str){
+      // encoding-japanese: Unicode文字列 -> SJISバイト配列(0-255)
+      // 失敗する文字は "?" などになることがある（端末仕様）
+      const unicodeArray = Encoding.stringToCode(str);
+      const sjisArray = Encoding.convert(unicodeArray, {
+        to: "SJIS",
+        from: "UNICODE"
+      });
+      return sjisArray; // number[]
+    }
+
+    function drawQRToCanvas(qr, targetCanvas, pxSize, marginModules){
+      const ctx = targetCanvas.getContext("2d");
+
+      const count = qr.getModuleCount();
+      const totalModules = count + marginModules * 2;
+
+      targetCanvas.width = pxSize;
+      targetCanvas.height = pxSize;
+
+      // 1モジュールあたりのピクセル（端数は余白に吸収）
+      const modulePx = Math.floor(pxSize / totalModules);
+      const drawSize = modulePx * totalModules;
+      const offset = Math.floor((pxSize - drawSize) / 2);
+
+      // 背景
+      ctx.clearRect(0, 0, pxSize, pxSize);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, pxSize, pxSize);
+
+      // 黒モジュール
+      ctx.fillStyle = "#000";
+      for (let r = 0; r < count; r++){
+        for (let c = 0; c < count; c++){
+          if (qr.isDark(r, c)){
+            const x = offset + (c + marginModules) * modulePx;
+            const y = offset + (r + marginModules) * modulePx;
+            ctx.fillRect(x, y, modulePx, modulePx);
+          }
+        }
+      }
+
+      return { moduleCount: count, modulePx, totalModules, offset };
+    }
+
+    function generate(){
+      const text = textInput.value ?? "";
+      if (!text.trim()){
+        setStatus("文字を入力してね。", true);
+        textInput.focus();
+        return;
+      }
+
+      const enc = encodingSelect.value; // utf8 or sjis
+      const ecc = eccSelect.value;      // L M Q H
+      const size = clamp(sizeInput.value, 120, 800);
+      const margin = clamp(marginInput.value, 0, 10);
+
+      try{
+        // typeNumber 0: 自動（入る最小の型）
+        const qr = qrcode(0, ecc);
+
+        if (enc === "sjis"){
+          const sjis = toSJISBytes(text);
+          // qrcode-generator はバイト列を入れられる
+          qr.addData(sjis, "Byte");
+        }else{
+          // UTF-8 で入れる（qrcode-generatorの addData は文字列も可）
+          // ※内部はUTF-16扱いだが、多くの環境で読み取りOK。
+          // 文字化けが出る端末ならSJISや別方式検討。
+          qr.addData(text);
+        }
+
+        qr.make();
+
+        const info = drawQRToCanvas(qr, canvas, size, margin);
+        metaInfo.textContent =
+          `enc=${enc.toUpperCase()} / ECC=${ecc} / modules=${info.moduleCount} / px=${size} / margin=${margin}`;
+
+        setStatus("生成しました！");
+      }catch(e){
+        console.error(e);
+        metaInfo.textContent = "生成失敗";
+        setStatus("生成に失敗（長すぎ/文字種/設定）", true);
+      }
+    }
+
+    function clearAll(){
+      textInput.value = "";
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      metaInfo.textContent = "未生成";
+      setStatus("クリアしました。");
+      textInput.focus();
+    }
+
+    async function copyText(){
+      const text = textInput.value ?? "";
+      if (!text.trim()) return setStatus("コピーする内容がありません。", true);
+      try{
+        await navigator.clipboard.writeText(text);
+        setStatus("コピーしました！");
+      }catch(e){
+        setStatus("コピーできませんでした（ブラウザ権限）。", true);
+      }
+    }
+
+    function downloadPNG(){
+      try{
+        const a = document.createElement("a");
+        const ts = new Date();
+        const y = ts.getFullYear();
+        const m = String(ts.getMonth()+1).padStart(2,"0");
+        const d = String(ts.getDate()).padStart(2,"0");
+        const hh = String(ts.getHours()).padStart(2,"0");
+        const mm = String(ts.getMinutes()).padStart(2,"0");
+        a.download = `qr_${y}${m}${d}_${hh}${mm}.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        setStatus("PNGを保存しました。");
+      }catch(e){
+        setStatus("保存できませんでした。", true);
+      }
+    }
+
+    // events
+    genBtn.addEventListener("click", generate);
+    clearBtn.addEventListener("click", clearAll);
+    copyBtn.addEventListener("click", copyText);
+    downloadBtn.addEventListener("click", downloadPNG);
+
+    textInput.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate();
+    });
+
+    // init
+    clearAll();
+  </script>
+</body>
+</html>
